@@ -21,6 +21,7 @@
 #include <pcl/segmentation/extract_polygonal_prism_data.h>
 #include <pcl/segmentation/extract_clusters.h>
 
+
 //#include "tabletop_object_detector/TabletopSegmentation.h"
 
 /**
@@ -88,6 +89,15 @@ private:
   //! How much the table gets padded in the horizontal direction
   double table_padding_;
 
+  /** Info that will be messages */
+  std::vector< pcl::PointCloud<Point> > mClusters;
+  pcl::PointCloud<Point> mTable_Points;
+  pcl::PointCloud<Point> mTableHull_Points;
+
+  /** Debugging variables */
+  pcl::PointCloud<Point> dDownsampledFilteredCloud;
+  pcl::PointCloud<Point> dTableInliers;
+  pcl::PointCloud<Point> dTableProjected;
 
   //------------------ Callbacks -------------------
 
