@@ -1,0 +1,7 @@
+cluster_0 : Regadera
+cluster_1: Pivot
+cluster_2: Drill
+cluster_3: Base Crichton
+cluster_4: Vaso
+cluster_5: Regadera 2
+cluster_6: Crichton base 2
