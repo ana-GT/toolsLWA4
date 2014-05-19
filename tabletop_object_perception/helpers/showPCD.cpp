@@ -85,7 +85,7 @@ boost::shared_ptr<pcl::visualization::PCLVisualizer> rgbViewer ( std::vector<pcl
 
   }
 
-  viewer->addCoordinateSystem (1.0, "global");
+  viewer->addCoordinateSystem (1.0, 0);
   viewer->initCameraParameters ();
   return (viewer);
 }

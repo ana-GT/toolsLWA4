@@ -9,6 +9,12 @@ target_link_libraries( grabKinectData ${OpenCV_LIBS} ${PCL_LIBRARIES} )
 set_target_properties( grabKinectData PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin
 		       RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin )
 
+# grabPCD
+add_executable( grabPCD grabPCD.cpp )
+target_link_libraries( grabPCD ${OpenCV_LIBS} ${PCL_LIBRARIES} )
+set_target_properties( grabPCD PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin
+		       RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin )
+
 # showPCD
 add_executable( showPCD showPCD.cpp )
 target_link_libraries( showPCD ${OpenCV_LIBS} ${PCL_LIBRARIES} )
