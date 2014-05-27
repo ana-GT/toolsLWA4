@@ -21,3 +21,4 @@ include_directories( ${OpenCV_INCLUDE_DIRS} )
 # Add subdirectories
 add_subdirectory( helpers )
 add_subdirectory( tabletop_object_detector )
+add_subdirectory( discretizeSpace )

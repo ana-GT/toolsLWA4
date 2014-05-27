@@ -29,6 +29,9 @@
  */
 class TabletopSegmentor {
   
+    typedef pcl::PointXYZRGBA    Point;
+    typedef pcl::search::KdTree<Point>::Ptr KdTreePtr;
+    
 public:
 
   /** Constructor */
@@ -47,6 +50,15 @@ public:
 
   void processCloud(const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &_cloud );
   
+  int getNumClusters() { return mClusters.size(); }
+  pcl::PointCloud<Point> getCluster( int _ind ) { 
+      return mClusters[_ind];	  
+  }
+  pcl::PointCloud<Point> getTable() { 
+      return mTable_Points;	  
+  }
+
+
   //! Clears old published markers and remembers the current number of published markers
   /*void clearOldMarkers(std::string frame_id);*/
 
@@ -55,12 +67,7 @@ public:
   template <class PointCloudType>
   bool tableMsgToPointCloud (Table &table, std::string frame_id, PointCloudType &table_hull);
   */
-  
-
-
-  typedef pcl::PointXYZRGBA    Point;
-  typedef pcl::search::KdTree<Point>::Ptr KdTreePtr;
-  
+    
 private:
 
 
