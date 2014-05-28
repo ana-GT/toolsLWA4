@@ -4,10 +4,11 @@ project(piranha_control_ui)
 #                COMPILE SETTINGS
 #-----------------------------------------------
 set(CMAKE_BUILD_TYPE "Debug")
-set(BUILD_FLAGS "-std=gnu++0x -Wreturn-type -Wno-enum-compare -Wall")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC" )
+set(BUILD_FLAGS "-std=gnu++0x -Wreturn-type -Wno-enum-compare -Wall -fPIC")
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/build)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
-set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/Modules")
 
 # Define preprocessor macro for Debug printing in Debug mode
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -75,6 +76,25 @@ QT4_WRAP_CPP(MOC ${MOC_FILES})
 # Add .qrc files
 file(GLOB RC_FILES .rc/*.qrc)
 QT4_ADD_RESOURCES(RESOURCES ${RC_FILES})
+
+
+# Add LWA4 software paths / include / libraries
+# amino, ach and reflex
+# Check piranhina
+find_package( amino REQUIRED )
+include_directories( ${AMINO_INCLUDE_DIRS} )
+find_package( ach REQUIRED )
+include_directories( ${ACH_INCLUDE_DIRS} )
+find_package( reflex REQUIRED )
+include_directories( ${REFLEX_INCLUDE_DIRS} )
+find_package( sns REQUIRED )
+include_directories( ${SNS_INCLUDE_DIRS} )
+find_package( piranha REQUIRED )
+include_directories( ${PIRANHA_INCLUDE_DIRS} )
+
+include_directories( ${CMAKE_SOURCE_DIR}/include )
+
+
 
 # Add source and header files
 #file(GLOB srcs ${CMAKE_CURRENT_LIST_DIR}/src/*.cpp ${CMAKE_CURRENT_LIST_DIR}/include/*.h)

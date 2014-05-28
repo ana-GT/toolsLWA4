@@ -10,6 +10,7 @@
 #include <dart/dynamics/Joint.h>
 #include <dart/dynamics/BodyNode.h>
 
+#include <ach.h>
 #include <piranhinha/piranha_control/piranha_control.h>
 
 /**
@@ -54,6 +55,8 @@ piranha_control_ui::piranha_control_ui(QWidget *parent) : ui(new Ui::piranha_con
     counter = 0;
     leftIndices.resize(1);
     leftValues.resize(1);
+
+    mPirCtrl = new piranha_control();
 }
 
 /**
@@ -71,7 +74,7 @@ piranha_control_ui::~piranha_control_ui(){
 void piranha_control_ui::init_setup() {
 
     std::cout << "Init setup of piranha_control object" << std::endl;
-    mPirCtrl.init_setup();
+    mPirCtrl->init_setup();
     std::cout << "Finish successfully I believe" << std::endl;
 
 }

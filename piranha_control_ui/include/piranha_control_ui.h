@@ -3,17 +3,14 @@
  */
 #pragma once
 
-
-
-#include "ui_piranha_control_ui.h"
 #include <grip/qtWidgets/GripTab.h>
 #include <grip/osgGolems/ViewerWidget.h>
 #include <grip/qtWidgets/TreeViewReturn.h>
 
+#include "ui_piranha_control_ui.h"
+
 //#include "crichtonSim/crichtonSim.h"
-
 class piranha_control;
-
 
 namespace dart { namespace dynamics { class Skeleton; } }
 
@@ -33,7 +30,7 @@ class piranha_control_ui : public GripTab {
   
  private:
 
-  piranha_control mPirCtrl;
+  piranha_control* mPirCtrl;
    
   std::vector<int> leftIndices;
   Eigen::VectorXd leftValues;

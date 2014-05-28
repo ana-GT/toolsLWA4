@@ -1,0 +1,142 @@
+#!/bin/sh
+
+if test -x ~/local/etc/init.d/sns; then
+   SNS=~/local/etc/init.d/sns
+elif test -x /usr/local/etc/init.d/sns; then
+   SNS=/usr/local/etc/init.d/sns
+elif test -x /etc/init.d/sns; then
+   SNS=/etc/init.d/sns
+else 
+   echo "Could not find SNS program"
+   exit 1
+fi
+
+
+echo "* [INFO] Found SNS in ${SNS}"
+
+CHANNELS="ref-torso state-torso ref-left state-left ref-right state-right"
+CHANNELS="$CHANNELS sdhref-left sdhstate-left sdhref-right sdhstate-right"
+CHANNELS="$CHANNELS ft-left ft-right ft-bias-left ft-bias-right"
+CHANNELS="$CHANNELS pir-ctrl pir-state pir-complete joystick pir-config"
+
+#*******************************************
+# piranhinha_ach_mk
+# Create channels for arm, hands, FT and
+#*******************************************
+piranhinha_ach_mk() {
+  for c in $CHANNELS; do
+      ach mk -1 -o 666 $c
+  done	
+}
+
+#********************************************
+# piranhinha_ach_rm()
+# Remove all channels for arm, hands, FT and 
+#********************************************
+piranhinha_ach_rm() {
+  for c in $CHANNELS; do
+      ach rm $c
+  done
+}
+
+
+# SocketCAN Interfaces for left arm, right arm and FT
+CAN_L=can0
+CAN_R=can1
+CAN_T=can2
+
+# esd CAN Interfaces
+CAN_SDH_L=0
+CAN_SDH_R=1
+
+#****************************
+# piranhinha_start
+# Erase sns folders
+#****************************
+piranhinha_start() {
+
+  # Create channels
+  piranhinha_ach_mk
+
+  # Start sns
+  $SNS start
+
+  # Create folder /tmp, /var for sns stuff
+  sudo mkdir /var/tmp/sns/lwa-left
+  sudo mkdir /var/tmp/sns/lwa-right
+  sudo mkdir /var/tmp/sns/torso
+  sudo mkdir /var/tmp/sns/ft-left
+  sudo mkdir /var/tmp/sns/ft-right
+  sudo mkdir /var/tmp/sns/sdh-left
+  sudo mkdir /var/tmp/sns/sdh-right
+
+  sudo mkdir /var/run/sns/lwa-left
+  sudo mkdir /var/run/sns/lwa-right
+  sudo mkdir /var/run/sns/torso
+  sudo mkdir /var/run/sns/ft-left
+  sudo mkdir /var/run/sns/ft-right
+  sudo mkdir /var/run/sns/sdh-left
+  sudo mkdir /var/run/sns/sdh-right
+}
+
+#****************************
+# piranhinha_expunge
+# Erase sns folders
+#****************************
+piranhinha_expunge() {
+  sudo rm -rf /var/tmp/sns/lwa-left
+  sudo rm -rf /var/tmp/sns/lwa-right
+  sudo rm -rf /var/tmp/sns/torso
+  sudo rm -rf /var/tmp/sns/ft-left
+  sudo rm -rf /var/tmp/sns/ft-right
+  sudo rm -rf /var/tmp/sns/sdh-left
+  sudo rm -rf /var/tmp/sns/sdh-right
+
+  sudo rm -rf /var/run/sns/lwa-left
+  sudo rm -rf /var/run/sns/lwa-right
+  sudo rm -rf /var/run/sns/torso
+  sudo rm -rf /var/run/sns/ft-left
+  sudo rm -rf /var/run/sns/ft-right
+  sudo rm -rf /var/run/sns/sdh-left
+  sudo rm -rf /var/run/sns/sdh-right
+}
+
+
+# ***********************
+# piranhinha_stop()
+# Kill the process
+# ***********************
+piranhinha_stop() {
+  $SNS kill lwa-left
+  $SNS kill lwa-right
+  $SNS kill torso
+  $SNS kill ft-left
+  $SNS kill ft-right
+  $SNS kill sdh-left
+  $SNS kill sdh-right
+}
+
+# *****************************************
+# Call functions on input argument
+# *****************************************
+case "$1" in
+  start)
+    piranhinha_start
+    ;;
+  stop)
+    piranhinha_stop
+    ;;
+  rm)
+    piranhinha_ach_rm
+    ;;
+  mk)
+    piranhinha_ach_mk
+    ;;
+  expunge)
+    piranhinha_expunge
+    ;;
+  *)
+    echo " * [ERROR] Invalid command"
+    exit 1
+    ;;
+esac
