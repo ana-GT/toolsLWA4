@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>piranha_control_ui</class>
- <widget class="QDockWidget" name="piranha_control_ui">
+ <class>piranha_viz_ui</class>
+ <widget class="QDockWidget" name="piranha_viz_ui">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -39,7 +39,7 @@ QDockWidget::float-button {
  }</string>
   </property>
   <property name="windowTitle">
-   <string>Piranha Control</string>
+   <string>Piranha Viz</string>
   </property>
   <widget class="QWidget" name="dockWidgetContents">
    <layout class="QHBoxLayout" name="horizontalLayout_10">

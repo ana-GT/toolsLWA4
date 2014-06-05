@@ -62,21 +62,21 @@ piranhinha_start() {
   $SNS start
 
   # Create folder /tmp, /var for sns stuff
-  sudo mkdir /var/tmp/sns/lwa-left
-  sudo mkdir /var/tmp/sns/lwa-right
-  sudo mkdir /var/tmp/sns/torso
-  sudo mkdir /var/tmp/sns/ft-left
-  sudo mkdir /var/tmp/sns/ft-right
-  sudo mkdir /var/tmp/sns/sdh-left
-  sudo mkdir /var/tmp/sns/sdh-right
+  sudo mkdir -p /var/tmp/sns/lwa-left
+  sudo mkdir -p /var/tmp/sns/lwa-right
+  sudo mkdir -p /var/tmp/sns/torso
+  sudo mkdir -p /var/tmp/sns/ft-left
+  sudo mkdir -p /var/tmp/sns/ft-right
+  sudo mkdir -p /var/tmp/sns/sdh-left
+  sudo mkdir -p /var/tmp/sns/sdh-right
 
-  sudo mkdir /var/run/sns/lwa-left
-  sudo mkdir /var/run/sns/lwa-right
-  sudo mkdir /var/run/sns/torso
-  sudo mkdir /var/run/sns/ft-left
-  sudo mkdir /var/run/sns/ft-right
-  sudo mkdir /var/run/sns/sdh-left
-  sudo mkdir /var/run/sns/sdh-right
+  sudo mkdir -p /var/run/sns/lwa-left
+  sudo mkdir -p /var/run/sns/lwa-right
+  sudo mkdir -p /var/run/sns/torso
+  sudo mkdir -p /var/run/sns/ft-left
+  sudo mkdir -p /var/run/sns/ft-right
+  sudo mkdir -p /var/run/sns/sdh-left
+  sudo mkdir -p /var/run/sns/sdh-right
 }
 
 #****************************

@@ -1,8 +1,9 @@
 /**
- * @file piranha_control_ui.cpp
+ * @file piranha_viz_ui.cpp
+ * @brief Read arm/hand states from ACH msgs and shows them in simulation
  */
  
-#include "piranha_control_ui.h"
+#include "piranha_viz_ui.h"
 #include <iostream>
 #include <qplugin.h>
 #include <QtGui>
@@ -11,13 +12,12 @@
 #include <dart/dynamics/BodyNode.h>
 
 #include <ach.h>
-#include <piranhinha/piranha_control/piranha_control.h>
 
 /**
- * @function piranha_control_ui
+ * @function piranha_viz_ui
  * @brief Constructor
  */
-piranha_control_ui::piranha_control_ui(QWidget *parent) : ui(new Ui::piranha_control_ui){
+piranha_viz_ui::piranha_viz_ui(QWidget *parent) : ui(new Ui::piranha_viz_ui){
     ui->setupUi(this);
 
     // Set button connections
@@ -52,19 +52,13 @@ piranha_control_ui::piranha_control_ui(QWidget *parent) : ui(new Ui::piranha_con
     // Set timer connection
     connect( &mTimer, SIGNAL(timeout()), this, SLOT( update()));
 
-    // STUFF...
-    counter = 0;
-    leftIndices.resize(1);
-    leftValues.resize(1);
-
-
 }
 
 /**
- * @function ~piranha_control_ui
+ * @function ~piranha_viz_ui
  * @brief Destructor
  */
-piranha_control_ui::~piranha_control_ui(){
+piranha_viz_ui::~piranha_viz_ui(){
 
 }
 
@@ -72,7 +66,7 @@ piranha_control_ui::~piranha_control_ui(){
  * @function startAchComm
  * @brief
  */
-void piranha_control_ui::init_ACH() {
+void piranha_viz_ui::init_ACH() {
     mCrichton.initSetup_channels();
 }
 
@@ -80,7 +74,7 @@ void piranha_control_ui::init_ACH() {
  * @function
  * @brief
  */
-void piranha_control_ui::stop_ACH() {
+void piranha_viz_ui::stop_ACH() {
 
 }
 
@@ -89,7 +83,7 @@ void piranha_control_ui::stop_ACH() {
  * @brief Start timer so at each timeout (100 ms) it will call
  * the callback timer function (defined in the constructor as update)
  */
-void piranha_control_ui::startUpdate() {
+void piranha_viz_ui::startUpdate() {
   mTimer.start(100);
 }
 
@@ -97,7 +91,7 @@ void piranha_control_ui::startUpdate() {
  * @function stopUpdate()
  * @brief Stop timer, so it won't call callback (update)
  */
-void piranha_control_ui::stopUpdate() {
+void piranha_viz_ui::stopUpdate() {
   mTimer.stop();
 }
 
@@ -106,9 +100,10 @@ void piranha_control_ui::stopUpdate() {
  * @function update
  * @brief Callback timer function
  */
-void piranha_control_ui::update() {
+void piranha_viz_ui::update() {
 
-    mCrichton.update();
+    mCrichton.getStatesToSim();
+    
 
 }
 
@@ -116,7 +111,7 @@ void piranha_control_ui::update() {
  * @function initializeSimParams
  * @brief Set the robot to use 
  */
-void piranha_control_ui::initializeSimParams() {
+void piranha_viz_ui::initializeSimParams() {
 
   // 1. Set robot loaded, verify that it is a lwa4
   if( !_world->getSkeleton("leftArm") ) {
@@ -147,7 +142,7 @@ void piranha_control_ui::initializeSimParams() {
  * @function
  * @brief
  */
-void piranha_control_ui::empty_2_1() {
+void piranha_viz_ui::empty_2_1() {
 
 }
 
@@ -155,7 +150,7 @@ void piranha_control_ui::empty_2_1() {
  * @function
  * @brief
  */
-void piranha_control_ui::empty_2_2() {
+void piranha_viz_ui::empty_2_2() {
 
 }
 
@@ -163,7 +158,7 @@ void piranha_control_ui::empty_2_2() {
  * @function
  * @brief
  */
-void piranha_control_ui::empty_2_3() {
+void piranha_viz_ui::empty_2_3() {
 
 }
 
@@ -171,7 +166,7 @@ void piranha_control_ui::empty_2_3() {
  * @function
  * @brief
  */
-void piranha_control_ui::empty_3_1() {
+void piranha_viz_ui::empty_3_1() {
 
 }
 
@@ -179,7 +174,7 @@ void piranha_control_ui::empty_3_1() {
  * @function
  * @brief
  */
-void piranha_control_ui::empty_3_2() {
+void piranha_viz_ui::empty_3_2() {
 
 }
 
@@ -187,7 +182,7 @@ void piranha_control_ui::empty_3_2() {
  * @function
  * @brief
  */
-void piranha_control_ui::empty_3_3() {
+void piranha_viz_ui::empty_3_3() {
 }
 
 
@@ -198,86 +193,59 @@ void piranha_control_ui::empty_3_3() {
  * @function GRIPEventSceneLoaded
  * @brief Run right after an scene has been loaded
  */
-void piranha_control_ui::GRIPEventSceneLoaded() {
-      
-    std::cerr << "Test!" << std::endl;
-
-    // Get GolemHubo skeleton
-    dart::dynamics::Skeleton* skel = _world->getSkeleton("tetrapak");
-
-    if (skel) {
-        // Get index of LSP (left shoulder pitch
-        std::vector<int> index(1);
-        index[0] = skel->getJoint("LSP")->getGenCoord(0)->getSkeletonIndex();
-
-        // Initialize joint value for LSP
-        Eigen::VectorXd jointValue(1);
-
-        // Move joint around
-        for (size_t i = 0; i < 200; ++i) {
-            // Set joint value
-            jointValue[0] = float(i) * 2 * M_PI / 200;
-            skel->setConfig(index, jointValue);
-
-            // Save world to timeline
-            _timeline->push_back(GripTimeslice(*_world));
-        }
-    } else {
-        std::cerr << "No skeleton named lwa4" << std::endl;
-    }
-
+void piranha_viz_ui::GRIPEventSceneLoaded() {
 
 }
 
 
-void piranha_control_ui::GRIPEventSimulationBeforeTimestep() {}
-void piranha_control_ui::GRIPEventSimulationAfterTimestep(){}
-void piranha_control_ui::GRIPEventSimulationStart(){}
-void piranha_control_ui::GRIPEventSimulationStop(){}
+void piranha_viz_ui::GRIPEventSimulationBeforeTimestep() {}
+void piranha_viz_ui::GRIPEventSimulationAfterTimestep(){}
+void piranha_viz_ui::GRIPEventSimulationStart(){}
+void piranha_viz_ui::GRIPEventSimulationStop(){}
 
 /**
  * @function GRIPEventTreeViewSelectionChanged
  * @brief Execute when an object is highlighted in the tree
  */
-void piranha_control_ui::GRIPEventTreeViewSelectionChanged() {
+void piranha_viz_ui::GRIPEventTreeViewSelectionChanged() {
 
     if(!_activeNode) {
-        std::cerr << "[piranha_control_ui] No item selected in TreeView" << std::endl;
+        std::cerr << "[piranha_viz_ui] No item selected in TreeView" << std::endl;
         return;
     }
 
-    std::cerr << "[piranha_control_ui] ActiveNodeType: " << _activeNode->dType << std::endl;
+    std::cerr << "[piranha_viz_ui] ActiveNodeType: " << _activeNode->dType << std::endl;
     if(Return_Type_Robot == _activeNode->dType) {
         dart::dynamics::Skeleton* skel = (dart::dynamics::Skeleton*)_activeNode->object;
-        std::cerr << "[piranha_control_ui] Skeleton Selected: " << skel->getName() << std::endl;
+        std::cerr << "[piranha_viz_ui] Skeleton Selected: " << skel->getName() << std::endl;
     } else if(Return_Type_Node == _activeNode->dType) {
         dart::dynamics::BodyNode* node = (dart::dynamics::BodyNode*)_activeNode->object;
-        std::cerr << "[piranha_control_ui] BodyNode Selected: " << node->getName() << std::endl;
+        std::cerr << "[piranha_viz_ui] BodyNode Selected: " << node->getName() << std::endl;
     } else {
-        std::cerr << "[piranha_control_ui] Unknown type selected in TreeView" << std::endl;
+        std::cerr << "[piranha_viz_ui] Unknown type selected in TreeView" << std::endl;
     }
 }
 
-void piranha_control_ui::GRIPEventPlaybackBeforeFrame() {}
+void piranha_viz_ui::GRIPEventPlaybackBeforeFrame() {}
 
 /**
  * \brief called from the main window whenever the simulation history slider is being played
  * This method is executed after every playback time step
  */
-void piranha_control_ui::GRIPEventPlaybackAfterFrame() {}
+void piranha_viz_ui::GRIPEventPlaybackAfterFrame() {}
 
 /**
  * \brief called from the main window whenever the simulation history slider is being played
  * This method is executed at the start of the playback
  */
-void piranha_control_ui::GRIPEventPlaybackStart() {}
+void piranha_viz_ui::GRIPEventPlaybackStart() {}
 
 /**
  * \brief called from the main window whenever the simulation history slider is being played
  * This method is executed at the end of the playback
  */
-void piranha_control_ui::GRIPEventPlaybackStop() {}
+void piranha_viz_ui::GRIPEventPlaybackStop() {}
 
-void piranha_control_ui::Refresh() {}
+void piranha_viz_ui::Refresh() {}
 
-Q_EXPORT_PLUGIN2(piranha_control_ui, piranha_control_ui)
+Q_EXPORT_PLUGIN2(piranha_viz_ui, piranha_viz_ui)

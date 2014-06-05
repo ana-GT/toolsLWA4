@@ -1,5 +1,5 @@
 /**
- * @file piranha_control_ui.h
+ * @file piranha_viz_ui.h
  */
 #pragma once
 
@@ -7,24 +7,23 @@
 #include <grip/osgGolems/ViewerWidget.h>
 #include <grip/qtWidgets/TreeViewReturn.h>
 
-#include "ui_piranha_control_ui.h"
+#include "ui_piranha_viz_ui.h"
 
 #include "crichtonSim/crichtonSim.h"
-//class piranha_control;
 
 namespace dart { namespace dynamics { class Skeleton; } }
 
 /**
- * @class piranha_control_ui
+ * @class piranha_viz_ui
  */
-class piranha_control_ui : public GripTab {
+class piranha_viz_ui : public GripTab {
     
   Q_OBJECT
     Q_INTERFACES(GripTab)
     
     public:
-  piranha_control_ui(QWidget *parent = 0);
-  ~piranha_control_ui();
+    piranha_viz_ui(QWidget *parent = 0);
+    ~piranha_viz_ui();
   
   QTimer mTimer;
   
@@ -32,10 +31,6 @@ class piranha_control_ui : public GripTab {
 
   crichtonSim mCrichton;
    
-  std::vector<int> leftIndices;
-  Eigen::VectorXd leftValues;
-  int counter;
-
 
   // Debug tools
   clock_t ts, tf; double dt;
@@ -70,6 +65,6 @@ class piranha_control_ui : public GripTab {
   void Refresh();
   
  private:
-  Ui::piranha_control_ui *ui;
+  Ui::piranha_viz_ui *ui;
   
 };

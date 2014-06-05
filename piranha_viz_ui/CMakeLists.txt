@@ -1,4 +1,4 @@
-project(piranha_control_ui)
+project(piranha_viz_ui)
 
 #-----------------------------------------------
 #                COMPILE SETTINGS
@@ -59,7 +59,7 @@ include_directories(${GRIP_INCLUDE_DIRS})
 include_directories(include)
 include_directories(${EXECUTABLE_OUTPUT_PATH})
 message( STATUS "Include for ui file: ${CMAKE_BINARY_DIR}")
-include_directories(${CMAKE_BINARY_DIR}/piranha_control_ui)
+include_directories(${CMAKE_BINARY_DIR}/piranha_viz_ui)
 include_directories( ${CMAKE_SOURCE_DIR} )
 
 # Add include directory in order to find ui_*.h files
@@ -100,10 +100,12 @@ include_directories( ${CMAKE_SOURCE_DIR}/include )
 #file(GLOB srcs ${CMAKE_CURRENT_LIST_DIR}/src/*.cpp ${CMAKE_CURRENT_LIST_DIR}/include/*.h)
 file(GLOB SRCS include/*.h src/*.cpp)
 
+message( STATUS "CMake of PIRANHA_VIZ: AMINO: ${AMINO_LIBRARIES}")
+
 # Add Qt Widgets library
-add_library( piranha_control_ui SHARED ${SRCS} ${UI} ${MOC} ${RESOURCES})
-target_link_libraries( piranha_control_ui piranha_control crichtonSim ${QT_LIBRARIES} ${PCL_COMMON_LIBRARIES} ${PCL_IO_LIBRARIES} ${DART_LIBRARIES} ${GRIP_LIBRARIES})
-set_target_properties( piranha_control_ui PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib )
+add_library( ${PROJECT_NAME} SHARED ${SRCS} ${UI} ${MOC} ${RESOURCES})
+target_link_libraries( ${PROJECT_NAME} crichtonSim  ${SNS_LIBRARIES} ${ACH_LIBRARIES} ${AMINO_LIBRARIES} ${QT_LIBRARIES} ${PCL_COMMON_LIBRARIES} ${PCL_IO_LIBRARIES} ${DART_LIBRARIES} ${GRIP_LIBRARIES})
+set_target_properties( ${PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib )
 
 # Set project libraries variable
-set(project_libs piranha_control_ui )
+set(project_libs ${PROJECT_NAME} )
