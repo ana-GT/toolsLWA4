@@ -37,7 +37,7 @@ set_target_properties( piranha_control PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMA
 						ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib )
 
 add_library( piranha_filter ${filter_src} ${filter_hdr} )
-target_link_libraries( piranha_filter ${PIRANHA_LIBRARIES} ${REFLEX_LIBRARIES} ${SNS_LIBRARIES} ${ACH_LIBRARIES}  ${AMINO_LIBRARIES} )
+target_link_libraries( piranha_filter ${PIRANHA_LIBRARIES} ${REFLEX_LIBRARIES} ${SNS_LIBRARIES} ${ACH_LIBRARIES}  ${AMINO_LIBRARIES} rt )
 set_target_properties( piranha_filter PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib 
 						ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib )
 

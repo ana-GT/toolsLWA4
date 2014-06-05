@@ -22,7 +22,7 @@ typedef struct {
     ach_channel_t chan_state_right;
     ach_channel_t chan_ft_left;
     ach_channel_t chan_ft_right;
-    ach_channel_t chan_ft_bias[2];
+    ach_channel_t chan_ftbias[2];
     ach_channel_t chan_sdhstate_left;
     ach_channel_t chan_sdhstate_right;
 
@@ -57,12 +57,16 @@ class piranha_filter {
     ~piranha_filter();
 
     bool init();
+    void run();
 
     void update(void);
     int update_n( size_t _n,
 		  size_t _i,
 		  ach_channel_t *_chan,
 		  struct timespec *_ts );
+    int update_ft( double *F,
+		   ach_channel_t *chan,
+		   struct timespec *ts );
 
     void sighandler_hup( int _sig );
     int bias_ft( void );

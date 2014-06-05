@@ -16,7 +16,8 @@ int main( int argc, char* argv[] ) {
     // Init it
     pf.init();
 
-    
+    // Run loop of updating / sending
+    pf.run();
 
     return 0;
 }
