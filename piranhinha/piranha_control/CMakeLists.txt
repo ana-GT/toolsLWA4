@@ -10,6 +10,11 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules" )
 set( CMAKE_C_FLAGS "-std=gnu99" )
 set( CMAKE_CXX_FLAGS " ${CMAKE_CXX_FLAGS} -fPIC" )
 
+#Eigen
+find_package( PkgConfig )
+pkg_check_modules( EIGEN eigen3 )
+include_directories( ${EIGEN_INCLUDE_DIRS} )
+
 # amino, ach and reflex
 find_package( amino REQUIRED )
 include_directories( ${AMINO_INCLUDE_DIRS} )
@@ -30,6 +35,15 @@ set( control_hdr piranha_control.h )
 
 set( filter_src piranha_filter.cpp )
 set( filter_hdr piranha_filter.h )
+
+set( lisp_src pir_lisp.cpp )
+set( lisp_hdr pir_lisp.h )
+
+add_library( pir_lisp ${lisp_src} ${lisp_hdr} )
+target_link_libraries( pir_lisp ${PIRANHA_LIBRARIES} ${REFLEX_LIBRARIES} ${SNS_LIBRARIES} ${ACH_LIBRARIES}  ${AMINO_LIBRARIES}  blas )
+set_target_properties( pir_lisp PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib 
+  ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib )
+
 
 add_library( piranha_control ${control_src} ${control_hdr} )
 target_link_libraries( piranha_control ${PIRANHA_LIBRARIES} ${REFLEX_LIBRARIES} ${SNS_LIBRARIES} ${ACH_LIBRARIES}  ${AMINO_LIBRARIES}  blas )

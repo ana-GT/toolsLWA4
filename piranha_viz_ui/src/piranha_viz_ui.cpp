@@ -84,7 +84,7 @@ void piranha_viz_ui::stop_ACH() {
  * the callback timer function (defined in the constructor as update)
  */
 void piranha_viz_ui::startUpdate() {
-  mTimer.start(100);
+    mTimer.start( mCrichton.getdt()*1000.0 );
 }
 
 /**
@@ -102,7 +102,7 @@ void piranha_viz_ui::stopUpdate() {
  */
 void piranha_viz_ui::update() {
 
-    mCrichton.getStatesToSim();
+    mCrichton.run();
     
 
 }
