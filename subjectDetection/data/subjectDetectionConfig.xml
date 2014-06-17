@@ -1,0 +1,20 @@
+<OpenNI>
+  <Licenses>
+    <!-- Apparently, we set this somewhere since we don't need to set it here -->
+  </Licenses>
+
+  <Log writeToConsole="false" writeToFile="false">
+    <LogLevel value="3"/>
+    <Masks>
+      <Mask name="ALL" on="true" />  
+    </Masks>
+    <Dumps>
+    </Dumps>
+  </Log>
+  
+  <ProductionNodes>
+    <Node type="Depth" name="depth_1">
+    </Node>
+  </ProductionNodes>
+
+</OpenNI>
