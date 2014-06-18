@@ -5,6 +5,8 @@
 
 #include <iostream>
 
+
+/** (Global, yeah, yeah) Variables */
 xn::Context subjectTracking::mContext;
 xn::ScriptNode subjectTracking::mScriptNode;
 xn::DepthGenerator subjectTracking::mDepthGenerator;
@@ -17,6 +19,11 @@ XnCallbackHandle subjectTracking::mhCalibComplete;
 XnCallbackHandle subjectTracking::mhPoseDetected;
 XnCallbackHandle subjectTracking::mhCalibInProgress;
 XnCallbackHandle subjectTracking::mhPoseInProgress;
+
+bool subjectTracking::mUseCalibFile_flag;
+char* subjectTracking::mCalib_filename;
+bool subjectTracking::mSaveCalibFile_flag;
+
 
 XnBool subjectTracking::mbNeedPose = FALSE;
 XnChar subjectTracking::mstrPose[20] = "";
@@ -42,12 +49,28 @@ subjectTracking::~subjectTracking() {
 
 
 bool subjectTracking::init() {
-
-  // 0. Initialize default values
+  std::cout << "Init "<< std::endl;
+  // -1. Initialize default values
   mbNeedPose = FALSE;
 
   nRetVal = XN_STATUS_OK;
   
+  mUseCalibFile_flag = false;
+  mSaveCalibFile_flag = false;
+  mCalib_filename = NULL;
+
+  // 0. Open ach channels - CONSIDER ONE USER ONLY
+  enum ach_status r;
+  r = ach_open( &mJointsUser.left_arm_chan, "subject_larm_state", NULL );
+  if( r != ACH_OK ) { printf("Subject left arm channel open error \n"); return false; }
+
+  r = ach_open( &mJointsUser.right_arm_chan, "subject_rarm_state", NULL );
+  if( r != ACH_OK ) { printf("Subject right arm channel open error \n"); return false; }
+
+  r = ach_open( &mJointsUser.upper_body_chan, "subject_upper_state", NULL );
+  if( r != ACH_OK ) { printf("Subject upper body channel open error \n"); return false; }
+
+
 
   // 1. Initialize context object
   nRetVal = mContext.Init();
@@ -138,7 +161,7 @@ bool subjectTracking::init() {
   }
 
 
-  mUserGenerator.GetSkeletonCap().SetSkeletonProfile( XN_SKEL_PROFILE_ALL );
+  mUserGenerator.GetSkeletonCap().SetSkeletonProfile( XN_SKEL_PROFILE_UPPER );
   
   nRetVal = mUserGenerator.GetSkeletonCap().RegisterToCalibrationInProgress( calibInProgress,
 									     NULL, 
@@ -159,6 +182,7 @@ bool subjectTracking::init() {
 
 }
 
+
 /**
  * @function update
  */
@@ -177,40 +201,110 @@ bool subjectTracking::update(){
   mDepthGenerator.GetMetaData( depthMD );
   mUserGenerator.GetUserPixels(0,sceneMD );
   
-  // Draw
-  XnUserID aUsers[15];
-  XnUInt16 nUsers = 15;
+  // Get joints of all users at this current moment and send them if user is being tracked
+  updateJointsAll();
+  
+}
 
-  mUserGenerator.GetUsers( aUsers, nUsers );
-  for( int i = 0; i < nUsers; ++i ) {
-    XnPoint3D com;
-    mUserGenerator.GetCoM( aUsers[i], com );
-    mDepthGenerator.ConvertRealWorldToProjective( 1, &com, &com );
+/**
+ * @function sendJointsAll
+ */
+void subjectTracking::sendJointsAll() {
+  
+  enum ach_status r; 
 
-    // Get joints
-    getJoint( aUsers[i], XN_SKEL_HEAD );
+  r = ach_put( &mJointsUser.left_arm_chan, 
+	       mJointsUser.left_arm_q, 
+	       sizeof( mJointsUser.left_arm_q) );
+  if( r != ACH_OK ) {
+    printf("Could not send left arm msg: %s \n", ach_result_to_string(r) );
+  }
 
-    getJoint( aUsers[i], XN_SKEL_NECK );
-    getJoint( aUsers[i], XN_SKEL_TORSO );
-    getJoint( aUsers[i], XN_SKEL_WAIST );
+  r = ach_put( &mJointsUser.right_arm_chan, 
+	       mJointsUser.right_arm_q, 
+	       sizeof( mJointsUser.right_arm_q) );
+  if( r != ACH_OK ) {
+    printf("Could not send right arm msg: %s \n", ach_result_to_string(r) );
+  }
 
-    getJoint( aUsers[i], XN_SKEL_LEFT_SHOULDER );
-    getJoint( aUsers[i], XN_SKEL_LEFT_ELBOW );
+  r = ach_put( &mJointsUser.upper_body_chan, 
+	       mJointsUser.upper_body_q, 
+	       sizeof( mJointsUser.upper_body_q) );
+  if( r != ACH_OK ) {
+    printf("Could not send upper body msg: %s \n", ach_result_to_string(r) );
   }
 
 
 }
 
+
 /**
- * @function getJoint
+ * @function updateJointsAll
  */
+
+void subjectTracking::updateJointsAll() {
+
+  XnUserID aUsers[15];
+  XnUInt16 nUsers = 15;
+
+  mUserGenerator.GetUsers( aUsers, nUsers );
+
+  if( nUsers > 1 ) {
+    printf(" WATCH OUT! More than one user detected. THIS CAN BE MESSY \n");
+  }
+
+  for( int i = 0; i < nUsers; ++i ) {
+    
+    if( mUserGenerator.GetSkeletonCap().IsTracking( aUsers[i] ) ) {
+      updateJointsUser( aUsers[i] );
+
+      // Send message with joints information
+      sendJointsAll();
+    }
+        
+  } 
+
+}
+
+/**
+ * @function updateJointUser
+ * @brief Fill joint information (ASSUME USER : 1 ONLY PERSON)
+ */
+void subjectTracking::updateJointsUser( XnUserID player ) {
+
+  getJoint( player, XN_SKEL_HEAD,
+	    mJointsUser.upper_body_q[0] );    
+  getJoint( player, XN_SKEL_NECK,
+	    mJointsUser.upper_body_q[1] );
+  getJoint( player, XN_SKEL_TORSO,
+	    mJointsUser.upper_body_q[2] );
+    
+  getJoint( player, XN_SKEL_LEFT_SHOULDER,
+	    mJointsUser.left_arm_q[0] );
+  getJoint( player, XN_SKEL_LEFT_ELBOW,
+	    mJointsUser.left_arm_q[1] );
+  getJoint( player, XN_SKEL_LEFT_HAND,
+	    mJointsUser.left_arm_q[2] );
+  
+  getJoint( player, XN_SKEL_RIGHT_SHOULDER,
+	    mJointsUser.right_arm_q[0] );
+  getJoint( player, XN_SKEL_RIGHT_ELBOW,
+	    mJointsUser.right_arm_q[1] );
+  getJoint( player, XN_SKEL_RIGHT_HAND,
+	    mJointsUser.right_arm_q[2] );
+  
+}
+
+
+
 void subjectTracking::getJoint( XnUserID player,
-				XnSkeletonJoint eJoint ) {
+				XnSkeletonJoint eJoint,
+				double jointPos[3] ) {
 
   if( !mUserGenerator.GetSkeletonCap().IsTracking( player ) ) {
     printf("User %d not tracked \n", player );
   }
-
+  
   if( !mUserGenerator.GetSkeletonCap().IsJointActive(eJoint) ) { 
     return; 
   }
@@ -223,8 +317,9 @@ void subjectTracking::getJoint( XnUserID player,
 
   XnPoint3D pt;
   pt = joint.position;
-  std::cout << "Joint position ("<< eJoint<<"): "<< pt.X<<", "<<pt.Y<<", "<< pt.Z << std::endl;
-
+  jointPos[0] = pt.X;
+  jointPos[1] = pt.Y;
+  jointPos[2] = pt.Z;
 }
 
 
@@ -258,7 +353,6 @@ void XN_CALLBACK_TYPE subjectTracking::user_new( xn::UserGenerator & /* generato
   
   // New user was found 
   if( mbNeedPose ) {
-    std::cout << "Need pose for calibration in user new..."<< std::endl;
     mUserGenerator.GetPoseDetectionCap().StartPoseDetection( mstrPose, nId );
   } else {
     mUserGenerator.GetSkeletonCap().RequestCalibration( nId, TRUE );
@@ -291,13 +385,26 @@ void XN_CALLBACK_TYPE subjectTracking::poseDetected( xn::PoseDetectionCapability
 						     void* /* pCookie */ ) {
   
 
-  std::cout << "Pose detected!"<< std::endl;
   XnUInt32 epochTime = 0;
   xnOSGetEpochTime( &epochTime );
   printf("[Epoch Time: %d] Pose %s detected for user %d \n", epochTime, strPose, nId );
 
-  mUserGenerator.GetPoseDetectionCap().StopPoseDetection(nId);
-  mUserGenerator.GetSkeletonCap().RequestCalibration( nId, TRUE );
+  mUserGenerator.GetPoseDetectionCap().StopPoseDetection(nId);  
+
+  if( !mUseCalibFile_flag ) {
+    mUserGenerator.GetSkeletonCap().RequestCalibration( nId, TRUE );  
+  }
+  else {
+    XnStatus rc = mUserGenerator.GetSkeletonCap().LoadCalibrationDataFromFile( nId,
+									       mCalib_filename );
+    if( rc == XN_STATUS_OK ) {
+      mUserGenerator.GetPoseDetectionCap().StopPoseDetection( nId );
+      mUserGenerator.GetSkeletonCap().StartTracking( nId );
+    } else {
+      printf("\t [ERROR] Calibration file did NOT Load fine! \n");
+    }
+  } 
+
 
 
 }
@@ -316,6 +423,8 @@ void XN_CALLBACK_TYPE subjectTracking::calibStart( xn::SkeletonCapability & /* c
 
 }
 
+
+
 /**
  * @function calibComplete
  * @brief Callback for when calibration is complete
@@ -332,6 +441,16 @@ void XN_CALLBACK_TYPE subjectTracking::calibComplete( xn::SkeletonCapability & /
   if( eStatus == XN_CALIBRATION_STATUS_OK ) {
     printf("[Epoch time: %d] Calibration complete, start tracking user %d \n", epochTime, nId );
     mUserGenerator.GetSkeletonCap().StartTracking(nId);
+
+    // Store calibration information
+    if( mSaveCalibFile_flag ) {
+      char filename[30];
+      sprintf( filename, "user_%d_calibration.bin", nId);
+      mUserGenerator.GetSkeletonCap().SaveCalibrationDataToFile( nId,
+								 filename );
+
+    }
+
   }
 
   // Calibration failed
@@ -357,24 +476,27 @@ void XN_CALLBACK_TYPE subjectTracking::calibComplete( xn::SkeletonCapability & /
 }
 
 
-
+/**
+ * @function calibInProgress
+ * @brief Callback function called while the calibration is taking place
+ */
 void XN_CALLBACK_TYPE subjectTracking::calibInProgress( xn::SkeletonCapability &_cap,
 							XnUserID id,
 							XnCalibrationStatus calibError,
 							void* pCookie ){
-
-  printf("CALIBRATION IN PROGRESS!! \n");
   mErrors[id].first = calibError;
 }
 
+/**
+ * @function poseInProgress
+ * @brief Callback function called while the pose detection is going on
+ */
 void XN_CALLBACK_TYPE subjectTracking::poseInProgress( xn::PoseDetectionCapability &_cap,
 						       const XnChar* strPose,
 						       XnUserID id,
 						       XnPoseDetectionStatus poseError,
 						       void* pCookie ){
 
-
-  printf("POSE IN PROGRESS!! \n");
   mErrors[id].second = poseError;
 
 }

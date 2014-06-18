@@ -6,8 +6,10 @@
 # REFLEX_LIBRARIES - The libraries needed to use reflex
 # *********************************************************
 
-find_path( reflex_INCLUDE_DIR reflex.h )
-find_library( reflex_LIBRARY reflex )
+find_path( reflex_INCLUDE_DIR reflex.h 
+            HINTS /home/ana/Software/LWA4/reflex/include )
+find_library( reflex_LIBRARY reflex
+	    HINTS /home/ana/Software/LWA4/reflex/.libs )
 
 set( REFLEX_LIBRARIES ${reflex_LIBRARY} )
 set( REFLEX_INCLUDE_DIRS ${reflex_INCLUDE_DIR} )

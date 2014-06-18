@@ -57,5 +57,5 @@ set_target_properties( crichtonSim PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_S
 
 # Add tiny test to move arm and send velocity commands
 add_executable( moveArm tests/moveArm.cpp )
-target_link_libraries( moveArm ${SNS_LIBRARIES} ${ACH_LIBRARIES} ${AMINO_LIBRARIES} ${DART_LIBRARIES} ${GRIP_LIBRARIES} )
+target_link_libraries( moveArm ${SNS_LIBRARIES} ${ACH_LIBRARIES} ${AMINO_LIBRARIES} ${DART_LIBRARIES} ${GRIP_LIBRARIES} gfortran blas lapack	)
 set_target_properties( moveArm PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin )

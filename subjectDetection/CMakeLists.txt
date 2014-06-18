@@ -45,9 +45,14 @@ target_link_libraries( NiUserTracker ${OPENNI_LIBRARIES} ${OPENGL_LIBRARIES} ${G
 set_target_properties( NiUserTracker PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin )
 
 
-
+# Our tracker sending ach messages
 add_executable( subjectTracking_main tests/subjectTracking_main.cpp )
 target_link_libraries( subjectTracking_main subjectTracking ${OPENNI_LIBRARIES} )
 set_target_properties( subjectTracking_main PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin )
+
+# Test receiver
+add_executable( receiveJointInfo tests/receiveJointInfo.cpp )
+target_link_libraries( receiveJointInfo ${OPENNI_LIBRARIES} ${ACH_LIBRARIES} )
+set_target_properties( receiveJointInfo PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin )
 
 

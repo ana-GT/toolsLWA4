@@ -17,12 +17,20 @@
 
 
 
-struct cx_t {
+struct joint_user_t {
 
-  ach_channel_t* left_shoulder_chan;
-  ach_channel_t* left_elbow_chan;
-  ach_channel_t* left_wrist_chan;
+  double left_arm_q[3][3]; // shoulder(3), elbow(1), hand(3)
+  double right_arm_q[3][3];
+  double upper_body_q[3][3]; // torso, neck, head
 
+  ach_channel_t left_arm_chan;
+  ach_channel_t right_arm_chan;
+  ach_channel_t upper_body_chan;
+};
+
+enum sides_t {
+  LEFT = 0,
+  RIGHT
 };
 
 
@@ -63,9 +71,13 @@ class subjectTracking {
 					      XnUserID nId,
 					      XnCalibrationStatus eStatus,
 					      void* /* pCookie */ );
-
+  
+  void updateJointsAll();
+  void sendJointsAll();
+  void updateJointsUser( XnUserID player );
   void getJoint( XnUserID player,
-		 XnSkeletonJoint eJoint ); 
+		 XnSkeletonJoint eJoint,
+		 double jointPos[3] );
 
   
   static void XN_CALLBACK_TYPE calibInProgress( xn::SkeletonCapability &_cap,
@@ -80,7 +92,7 @@ class subjectTracking {
 					       void* pCookie );
 
   
-  cx_t mCx;
+  joint_user_t mJointsUser;
 
   // Debug
   XnStatus nRetVal;
@@ -102,6 +114,10 @@ class subjectTracking {
 
   static XnBool mbNeedPose;
   static XnChar mstrPose[20];
+  
+  static bool mUseCalibFile_flag;
+  static char* mCalib_filename;
+  static bool mSaveCalibFile_flag;
 
   static std::map<XnUInt32, std::pair<XnCalibrationStatus, XnPoseDetectionStatus> > mErrors;
 
