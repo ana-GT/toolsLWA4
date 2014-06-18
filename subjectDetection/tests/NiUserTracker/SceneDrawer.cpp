@@ -50,10 +50,12 @@ extern XnBool g_bMarkJoints;
 std::map<XnUInt32, std::pair<XnCalibrationStatus, XnPoseDetectionStatus> > m_Errors;
 void XN_CALLBACK_TYPE MyCalibrationInProgress(xn::SkeletonCapability& /*capability*/, XnUserID id, XnCalibrationStatus calibrationError, void* /*pCookie*/)
 {
+printf("Calibration in progress \n");
 	m_Errors[id].first = calibrationError;
 }
 void XN_CALLBACK_TYPE MyPoseInProgress(xn::PoseDetectionCapability& /*capability*/, const XnChar* /*strPose*/, XnUserID id, XnPoseDetectionStatus poseError, void* /*pCookie*/)
 {
+printf("Pose in progress \n");
 	m_Errors[id].second = poseError;
 }
 

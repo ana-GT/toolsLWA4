@@ -26,6 +26,13 @@
 #include <XnCppWrapper.h>
 #include "SceneDrawer.h"
 #include <XnPropNames.h>
+#include <iostream>
+
+
+class subjectTracking {
+
+};
+
 
 //---------------------------------------------------------------------------
 // Globals
@@ -94,7 +101,7 @@ void XN_CALLBACK_TYPE User_NewUser(xn::UserGenerator& /*generator*/, XnUserID nI
 	printf("%d New User %d\n", epochTime, nId);
 	// New user found
 	if (g_bNeedPose)
-	{
+	{    std::cout << "Need pose for calibration in user new..."<< std::endl;
 		g_UserGenerator.GetPoseDetectionCap().StartPoseDetection(g_strPose, nId);
 	}
 	else
@@ -327,131 +334,71 @@ int main(int argc, char **argv)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 
-	if (argc > 1)
-	{
-		nRetVal = g_Context.Init();
-		CHECK_RC(nRetVal, "Init");
-		nRetVal = g_Context.OpenFileRecording(argv[1], g_Player);
-		if (nRetVal != XN_STATUS_OK)
-		{
-			printf("Can't open recording %s: %s\n", argv[1], xnGetStatusString(nRetVal));
-			return 1;
-		}
-	}
-	else
-	{
-		xn::EnumerationErrors errors;
-		nRetVal = g_Context.InitFromXmlFile(SAMPLE_XML_PATH, g_scriptNode, &errors);
-		if (nRetVal == XN_STATUS_NO_NODE_PRESENT)
-		{
-			XnChar strError[1024];
-			errors.ToString(strError, 1024);
-			printf("%s\n", strError);
-			return (nRetVal);
-		}
-		else if (nRetVal != XN_STATUS_OK)
-		{
-			printf("Open failed: %s\n", xnGetStatusString(nRetVal));
-			return (nRetVal);
-		}
-	}
+	nRetVal = g_Context.Init();
+	
+	g_DepthGenerator.Create( g_Context );
+	CHECK_RC(nRetVal, "Find depth  generator");
 
-	nRetVal = g_Context.FindExistingNode(XN_NODE_TYPE_DEPTH, g_DepthGenerator);
-	if (nRetVal != XN_STATUS_OK)
-	{
-		printf("No depth generator found. Using a default one...");
-		xn::MockDepthGenerator mockDepth;
-		nRetVal = mockDepth.Create(g_Context);
-		CHECK_RC(nRetVal, "Create mock depth");
-
-		// set some defaults
-		XnMapOutputMode defaultMode;
-		defaultMode.nXRes = 320;
-		defaultMode.nYRes = 240;
-		defaultMode.nFPS = 30;
-		nRetVal = mockDepth.SetMapOutputMode(defaultMode);
-		CHECK_RC(nRetVal, "set default mode");
-
-		// set FOV
-		XnFieldOfView fov;
-		fov.fHFOV = 1.0225999419141749;
-		fov.fVFOV = 0.79661567681716894;
-		nRetVal = mockDepth.SetGeneralProperty(XN_PROP_FIELD_OF_VIEW, sizeof(fov), &fov);
-		CHECK_RC(nRetVal, "set FOV");
-
-		XnUInt32 nDataSize = defaultMode.nXRes * defaultMode.nYRes * sizeof(XnDepthPixel);
-		XnDepthPixel* pData = (XnDepthPixel*)xnOSCallocAligned(nDataSize, 1, XN_DEFAULT_MEM_ALIGN);
-
-		nRetVal = mockDepth.SetData(1, 0, nDataSize, pData);
-		CHECK_RC(nRetVal, "set empty depth map");
-
-		g_DepthGenerator = mockDepth;
-	}
-
-	nRetVal = g_Context.FindExistingNode(XN_NODE_TYPE_USER, g_UserGenerator);
-	if (nRetVal != XN_STATUS_OK)
-	{
-		nRetVal = g_UserGenerator.Create(g_Context);
-		CHECK_RC(nRetVal, "Find user generator");
-	}
+	nRetVal = g_UserGenerator.Create(g_Context);
+	CHECK_RC(nRetVal, "Find user generator");
 
 	XnCallbackHandle hUserCallbacks, hCalibrationStart, hCalibrationComplete, hPoseDetected, hCalibrationInProgress, hPoseInProgress;
-	if (!g_UserGenerator.IsCapabilitySupported(XN_CAPABILITY_SKELETON))
-	{
-		printf("Supplied user generator doesn't support skeleton\n");
-		return 1;
+	if (!g_UserGenerator.IsCapabilitySupported(XN_CAPABILITY_SKELETON)) {
+	  printf("Supplied user generator doesn't support skeleton\n");
+	  return 1;
 	}
+
 	nRetVal = g_UserGenerator.RegisterUserCallbacks(User_NewUser, User_LostUser, NULL, hUserCallbacks);
 	CHECK_RC(nRetVal, "Register to user callbacks");
 	nRetVal = g_UserGenerator.GetSkeletonCap().RegisterToCalibrationStart(UserCalibration_CalibrationStart, NULL, hCalibrationStart);
 	CHECK_RC(nRetVal, "Register to calibration start");
 	nRetVal = g_UserGenerator.GetSkeletonCap().RegisterToCalibrationComplete(UserCalibration_CalibrationComplete, NULL, hCalibrationComplete);
 	CHECK_RC(nRetVal, "Register to calibration complete");
-
+	
 	if (g_UserGenerator.GetSkeletonCap().NeedPoseForCalibration())
-	{
-		g_bNeedPose = TRUE;
-		if (!g_UserGenerator.IsCapabilitySupported(XN_CAPABILITY_POSE_DETECTION))
-		{
-			printf("Pose required, but not supported\n");
-			return 1;
-		}
-		nRetVal = g_UserGenerator.GetPoseDetectionCap().RegisterToPoseDetected(UserPose_PoseDetected, NULL, hPoseDetected);
-		CHECK_RC(nRetVal, "Register to Pose Detected");
-		g_UserGenerator.GetSkeletonCap().GetCalibrationPose(g_strPose);
-
-		nRetVal = g_UserGenerator.GetPoseDetectionCap().RegisterToPoseInProgress(MyPoseInProgress, NULL, hPoseInProgress);
-		CHECK_RC(nRetVal, "Register to pose in progress");
-	}
-
+	  {
+	    g_bNeedPose = TRUE;
+	    if (!g_UserGenerator.IsCapabilitySupported(XN_CAPABILITY_POSE_DETECTION))
+	      {
+		printf("Pose required, but not supported\n");
+		return 1;
+	      }
+	    nRetVal = g_UserGenerator.GetPoseDetectionCap().RegisterToPoseDetected(UserPose_PoseDetected, NULL, hPoseDetected);
+	    CHECK_RC(nRetVal, "Register to Pose Detected");
+	    g_UserGenerator.GetSkeletonCap().GetCalibrationPose(g_strPose);
+	    
+	    nRetVal = g_UserGenerator.GetPoseDetectionCap().RegisterToPoseInProgress(MyPoseInProgress, NULL, hPoseInProgress);
+	    CHECK_RC(nRetVal, "Register to pose in progress");
+	  }
+	
 	g_UserGenerator.GetSkeletonCap().SetSkeletonProfile(XN_SKEL_PROFILE_ALL);
-
+	
 	nRetVal = g_UserGenerator.GetSkeletonCap().RegisterToCalibrationInProgress(MyCalibrationInProgress, NULL, hCalibrationInProgress);
 	CHECK_RC(nRetVal, "Register to calibration in progress");
-
+	
 	nRetVal = g_Context.StartGeneratingAll();
 	CHECK_RC(nRetVal, "StartGenerating");
-
+	
 #ifndef USE_GLES
 	glInit(&argc, argv);
 	glutMainLoop();
 #else
 	if (!opengles_init(GL_WIN_SIZE_X, GL_WIN_SIZE_Y, &display, &surface, &context))
-	{
-		printf("Error initializing opengles\n");
-		CleanupExit();
-	}
-
+	  {
+	    printf("Error initializing opengles\n");
+	    CleanupExit();
+	  }
+	
 	glDisable(GL_DEPTH_TEST);
 	glEnable(GL_TEXTURE_2D);
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glDisableClientState(GL_COLOR_ARRAY);
-
+	
 	while (!g_bQuit)
-	{
-		glutDisplay();
-		eglSwapBuffers(display, surface);
-	}
+	  {
+	    glutDisplay();
+	    eglSwapBuffers(display, surface);
+	  }
 	opengles_shutdown(display, surface, context);
 
 	CleanupExit();

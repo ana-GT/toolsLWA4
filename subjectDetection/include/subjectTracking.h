@@ -85,6 +85,8 @@ class subjectTracking {
   // Debug
   XnStatus nRetVal;
 
+  public:
+
   static xn::Context mContext;
   static xn::ScriptNode mScriptNode;
   static xn::DepthGenerator mDepthGenerator;

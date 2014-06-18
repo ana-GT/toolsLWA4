@@ -363,6 +363,7 @@ void XN_CALLBACK_TYPE subjectTracking::calibInProgress( xn::SkeletonCapability &
 							XnCalibrationStatus calibError,
 							void* pCookie ){
 
+  printf("CALIBRATION IN PROGRESS!! \n");
   mErrors[id].first = calibError;
 }
 
@@ -372,6 +373,8 @@ void XN_CALLBACK_TYPE subjectTracking::poseInProgress( xn::PoseDetectionCapabili
 						       XnPoseDetectionStatus poseError,
 						       void* pCookie ){
 
+
+  printf("POSE IN PROGRESS!! \n");
   mErrors[id].second = poseError;
 
 }
