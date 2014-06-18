@@ -18,16 +18,24 @@ XnCallbackHandle subjectTracking::mhPoseDetected;
 XnCallbackHandle subjectTracking::mhCalibInProgress;
 XnCallbackHandle subjectTracking::mhPoseInProgress;
 
-XnBool subjectTracking::mbNeedPose;
+XnBool subjectTracking::mbNeedPose = FALSE;
 XnChar subjectTracking::mstrPose[20] = "";
 
 std::map<XnUInt32, std::pair<XnCalibrationStatus, XnPoseDetectionStatus> > subjectTracking::mErrors;
 
-
+/**
+ * @function subjectTrackig
+ * @brief Constructor
+ */
 subjectTracking::subjectTracking() {
 
 }
 
+
+/**
+ * @function subjectTrackig
+ * @brief Destructor
+ */
 subjectTracking::~subjectTracking() {
 
 }
@@ -101,6 +109,7 @@ bool subjectTracking::init() {
 
   if( mUserGenerator.GetSkeletonCap().NeedPoseForCalibration() ) {
     mbNeedPose = TRUE;
+    printf("\t [INFO] Setting need pose to true!! \n");
     if( !mUserGenerator.IsCapabilitySupported( XN_CAPABILITY_POSE_DETECTION) ) {
       printf("Pose required for calibration, but not supported \n");
       return 1;
@@ -235,7 +244,10 @@ void subjectTracking::CleanupExit() {
 }
 
 
-
+/**
+ * @function user_new
+ * @brief Callback for when new user is detected
+ */
 void XN_CALLBACK_TYPE subjectTracking::user_new( xn::UserGenerator & /* generator*/,
 						 XnUserID nId,
 						 void* /* pCookie */) {
@@ -255,6 +267,10 @@ void XN_CALLBACK_TYPE subjectTracking::user_new( xn::UserGenerator & /* generato
 
 }
 
+/**
+ * @function user_lost
+ * @brief Callback for when existing user is lost 
+ */
 void XN_CALLBACK_TYPE subjectTracking::user_lost( xn::UserGenerator & /* generator */,
 						  XnUserID nId,
 						  void* /** pCookie*/ ) {
@@ -265,7 +281,10 @@ void XN_CALLBACK_TYPE subjectTracking::user_lost( xn::UserGenerator & /* generat
 
 }
 
-
+/**
+ * @function poseDetected
+ * @brief Called when a pose is detected
+ */
 void XN_CALLBACK_TYPE subjectTracking::poseDetected( xn::PoseDetectionCapability & /* capability */,
 						     const XnChar* strPose,
 						     XnUserID nId,
@@ -283,6 +302,10 @@ void XN_CALLBACK_TYPE subjectTracking::poseDetected( xn::PoseDetectionCapability
 
 }
   
+/**
+ * @function calibStart
+ * @brief Callback when calibration is started
+ */
 void XN_CALLBACK_TYPE subjectTracking::calibStart( xn::SkeletonCapability & /* capability */,
 						   XnUserID nId,
 						   void* /* pCookie */ ) {
@@ -293,7 +316,10 @@ void XN_CALLBACK_TYPE subjectTracking::calibStart( xn::SkeletonCapability & /* c
 
 }
 
-  
+/**
+ * @function calibComplete
+ * @brief Callback for when calibration is complete
+ */  
 void XN_CALLBACK_TYPE subjectTracking::calibComplete( xn::SkeletonCapability & /* capability */,
 						      XnUserID nId,
 						      XnCalibrationStatus eStatus,
@@ -304,7 +330,7 @@ void XN_CALLBACK_TYPE subjectTracking::calibComplete( xn::SkeletonCapability & /
 
   // Calibration succeeded
   if( eStatus == XN_CALIBRATION_STATUS_OK ) {
-    printf("[Epoch time: %d] Calibration complte, start tracking user %d \n", epochTime, nId );
+    printf("[Epoch time: %d] Calibration complete, start tracking user %d \n", epochTime, nId );
     mUserGenerator.GetSkeletonCap().StartTracking(nId);
   }
 
