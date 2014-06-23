@@ -71,7 +71,7 @@ QGroupBox::title {
  } </string>
       </property>
       <property name="title">
-       <string>Connection</string>
+       <string>Connection Robots</string>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_3">
        <property name="topMargin">
@@ -149,7 +149,7 @@ QGroupBox::title {
  } </string>
       </property>
       <property name="title">
-       <string>Empty 2</string>
+       <string>Connection Subject Tracker </string>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <property name="topMargin">
@@ -158,9 +158,9 @@ QGroupBox::title {
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_4">
          <item>
-          <widget class="QPushButton" name="empty_2_1_pushButton">
+          <widget class="QPushButton" name="init_ACH_subject_pushButton">
            <property name="text">
-            <string>Empty_2_1</string>
+            <string>Init ACH stuff</string>
            </property>
           </widget>
          </item>
@@ -171,7 +171,7 @@ QGroupBox::title {
          <item>
           <widget class="QPushButton" name="empty_2_2_pushButton">
            <property name="text">
-            <string>Empty_2_2</string>
+            <string>Init Simulation Parameters</string>
            </property>
           </widget>
          </item>
@@ -180,9 +180,16 @@ QGroupBox::title {
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_6">
          <item>
-          <widget class="QPushButton" name="empty_2_3_pushButton">
+          <widget class="QPushButton" name="startUpdate_subject_pushButton">
            <property name="text">
-            <string>Empty_2_3</string>
+            <string>Start Update</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="stopUpdate_subject_pushButton">
+           <property name="text">
+            <string>Stop Update</string>
            </property>
           </widget>
          </item>

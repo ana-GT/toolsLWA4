@@ -1,0 +1,54 @@
+<world name="dummyHuman_world">
+
+  <include filename="dummyHead.urdf" model_name="dhead"/>
+  <include filename="dummyShoulder.urdf" model_name="dshoulder"/>
+  <include filename="dummyHand.urdf" model_name="dhand"/>
+  <include filename="dummyElbow.urdf" model_name="delbow"/>
+  <include filename="../../../../commonData/urdf/LWA4_table.urdf" model_name="table"/> 
+
+  <entity model="dhead" name="head">
+    <origin xyz="0 0.2 1.62" rpy="0 0 0"/>
+  </entity>
+
+  <entity model="dhead" name="neck">
+    <origin xyz="0 0.2 1.58" rpy="0 0 0"/>
+  </entity>
+
+
+  <entity model="dhead" name="torso">
+    <origin xyz="0 0.2 1.50" rpy="0 0 0"/>
+  </entity>
+
+
+  <entity model="dshoulder" name="lshoulder">
+    <origin xyz="0 0.4 1.52" rpy="0 0 0"/>
+  </entity>
+
+  <entity model="delbow" name="lelbow">
+    <origin xyz="0 0.4 1.32" rpy="0 0 0"/>
+  </entity>
+
+  <entity model="dhand" name="lhand">
+    <origin xyz="0 0.4 1.22" rpy="0 0 0"/>
+  </entity>
+
+  <!-- Right side -->
+  <entity model="dshoulder" name="rshoulder">
+    <origin xyz="0 0.4 1.52" rpy="0 0 0"/>
+  </entity>
+
+  <entity model="delbow" name="relbow">
+    <origin xyz="0 0.4 1.32" rpy="0 0 0"/>
+  </entity>
+
+  <entity model="dhand" name="rhand">
+    <origin xyz="0 0.4 1.22" rpy="0 0 0"/>
+  </entity>
+
+
+  <entity model="table" name="table">
+    <origin xyz="0 0.0 0.01" rpy="0 0 0"/>
+  </entity> 
+
+
+</world>

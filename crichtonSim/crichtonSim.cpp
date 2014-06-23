@@ -145,7 +145,7 @@ void crichtonSim::simulate() {
     } break;
  
     case SNS_MOTOR_MODE_VEL : {
-
+	std::cout << "Using motor velocity mode"<<std::endl;
 	// Left Arm
 	mq_la = mLeftArm->getConfig();
 	mq_la += mdt*mdq_la;

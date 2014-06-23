@@ -26,6 +26,7 @@ class piranha_viz_ui : public GripTab {
     ~piranha_viz_ui();
   
   QTimer mTimer;
+  QTimer mTimer_subject;
   
  private:
 
@@ -44,9 +45,13 @@ class piranha_viz_ui : public GripTab {
   
   void update();
   
-  void empty_2_1();
-  void empty_2_2();
-  void empty_2_3();
+  void init_ACH_subject();
+  void init_stuff_subject();
+  void startUpdate_subject();
+  void stopUpdate_subject();
+  void update_subject();
+
+
   void empty_3_1();
   void empty_3_2();
   void empty_3_3();
@@ -67,4 +72,19 @@ class piranha_viz_ui : public GripTab {
  private:
   Ui::piranha_viz_ui *ui;
   
+  // Subject stuff
+  ach_channel_t left_arm_chan;
+  ach_channel_t right_arm_chan;
+  ach_channel_t upper_body_chan;
+  
+  double left_arm_q[3][3];
+  double right_arm_q[3][3];
+  double upper_body_q[3][3];
+
+
+  Eigen::Isometry3d Twc; /** Transformation from world to camera */
+
+ public: 
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
 };

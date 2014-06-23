@@ -17,7 +17,7 @@ int main( int argc, char* argv[] ) {
   
   while( !xnOSWasKeyboardHit() ) {
     st.update();
-    usleep(100*1000);
+    usleep(50*1000);
   } 
 
 

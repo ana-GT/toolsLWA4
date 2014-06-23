@@ -108,7 +108,10 @@ void piranha_control_ui::stopUpdate() {
  */
 void piranha_control_ui::update() {
 
+    // Update status knowledge
     mCrichton.update();
+    // Send control command
+    mCrichton.control();
 
 }
 
