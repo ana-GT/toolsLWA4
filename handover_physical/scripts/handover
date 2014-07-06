@@ -1,0 +1,82 @@
+#!/bin/sh
+
+# Find SNS
+if test -x ~/local/etc/init.d/sns; then
+   SNS=~/local/etc/init.d/sns
+elif test -x /usr/local/etc/init.d/sns; then
+   SNS=/usr/local/etc/init.d/sns
+elif test -x /etc/init.d/sns; then
+   SNS=/etc/init.d/sns
+else 
+   echo "Could not find SNS program"
+   exit 1
+fi
+
+# Workstations
+HANDOVER_VISION_HOST=192.168.1.41 #Zhaan
+HANDOVER_PLANNING_HOST=192.168.1.92 # Powell
+#HANDOVER_CONTROL_HOST=192.168.1.XX # Calvin
+
+
+#==================================
+# Call functions on input argument
+#==================================
+case "$1" in
+
+	#**********************
+	# START
+	#**********************
+	start)
+
+		# Start SNS
+		$SNS start
+	
+		# Create folder /tmp, /var for sns stuff
+		sudo mkdir -p /var/tmp/sns/kinectmarkers
+		sudo mkdir -p /var/tmp/sns/sim-markers
+		sudo mkdir -p /var/run/sns/kinectmarkers
+		sudo mkdir -p /var/run/sns/sim-markers
+
+		# Pull marker information from zhaan's channel 
+		achd -r pull $HANDOVER_VISION_HOST kinectmarkers
+		
+		# Create channel to send kinect information filtered
+		ach mk -1 -o 666 "sim-markers"
+		;;
+
+	#**********************
+	# STOP
+	#**********************
+	stop)
+		#$SNS kill kinectmarkers # This is zhaan's. KILL IT?
+		$SNS kill sim-markers
+		;;
+
+	#**********************
+	# EXPUNGE
+	#**********************
+	expunge)
+		sudo rm -rf /var/tmp/sns/kinectmarkers	
+		sudo rm -rf /var/run/sns/kinectmarkers
+		sudo rm -rf /var/tmp/sns/sim-markers	
+		sudo rm -rf /var/run/sns/sim-markers
+		;;
+
+	#**********************
+	# RM
+	#**********************
+	rm)
+		ach rm "sim-markers"
+		;;
+	#**********************
+	# ALL ELSE
+	#**********************
+	*)
+		echo "Invalid command"	
+		exit 1
+		;;
+esac
+
+
+
+
