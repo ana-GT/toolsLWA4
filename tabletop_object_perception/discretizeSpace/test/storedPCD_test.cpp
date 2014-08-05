@@ -4,7 +4,7 @@
 #include <pcl/io/pcd_io.h>
 #include <PCL2Octomap.h>
 #include <octomap/ColorOcTree.h>
-#include <tabletop_object_perception/tabletop_object_detector/tabletop_segmentation.h>
+#include <tabletop_object_detector/tabletop_segmentation.h>
 
 octomap::ColorOcTreeNode::Color gColor[10] = { octomap::ColorOcTreeNode::Color(255,0,0),
 					       octomap::ColorOcTreeNode::Color(0, 255,0),

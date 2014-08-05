@@ -100,6 +100,7 @@ private:
   std::vector< pcl::PointCloud<Point> > mClusters;
   pcl::PointCloud<Point> mTable_Points;
   pcl::PointCloud<Point> mTableHull_Points;
+  std::vector<double> mTableCoeffs; 
 
   /** Debugging variables */
   pcl::PointCloud<Point> dDownsampledFilteredCloud;

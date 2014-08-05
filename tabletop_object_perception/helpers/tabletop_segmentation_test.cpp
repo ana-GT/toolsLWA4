@@ -7,7 +7,7 @@
 #include <pcl/visualization/cloud_viewer.h>
 #include <pcl/console/parse.h>
 
-#include <tabletop_object_perception/tabletop_object_detector/tabletop_segmentation.h>
+#include <tabletop_object_detector/tabletop_segmentation.h>
 
 
 //-- Global variables
@@ -34,8 +34,6 @@ boost::shared_ptr<pcl::visualization::CloudViewer> createViewer();
  * @brief Main function what else?
  */
 int main( int argc, char* argv[] ) {
-
-
 
   // If user requires help
   if( pcl::console::find_argument( argc, argv, "-h" ) >= 0 ) {

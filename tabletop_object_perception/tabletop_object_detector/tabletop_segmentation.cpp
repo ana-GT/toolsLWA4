@@ -387,6 +387,12 @@ void TabletopSegmentor::processCloud(const pcl::PointCloud<pcl::PointXYZRGBA>::C
 	      << table_coefficients_ptr->values[1] <<" " 
 	      << table_coefficients_ptr->values[2] <<" " 
 	      << table_coefficients_ptr->values[3] << std::endl;
+    
+    // Store table's plane coefficients
+    mTableCoeffs.resize(4);
+    for( int i = 0; i < 4; ++i ) {
+      mTableCoeffs[i] = table_coefficients_ptr->values[i];
+    }
 
     // DEBUG ------------
     pcl::copyPointCloud( *cloud_downsampled_ptr, *table_inliers_ptr, dTableInliers );

@@ -6,6 +6,8 @@ project( tabletop_object_perception )
 # Source files
 include_directories( ${CMAKE_SOURCE_DIR} )
 
+message( "CMAKE SOURCE DIR: ${CMAKE_SOURCE_DIR}")
+
 # PCL
 find_package( PCL 1.7 REQUIRED )
 
