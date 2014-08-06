@@ -90,6 +90,8 @@ int main( int argc, char* argv[] ) {
     }
     boost::function< void (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr&) > f = boost::bind( &grabberCallback, _1 );
     gKinectGrabber->registerCallback(f);
+
+
   }
 
   // Create viewer
@@ -158,6 +160,16 @@ void grabberCallback( const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &_cloud
 
     /** Process cloud */
     gTs.processCloud( _cloud );
+
+    // Visualize camera parameters
+    double fx, fy, cx, cy;
+    fx = 0; fy = 0; cx = 0; cy = 0;
+    std::cout << " BEFORE: Focal length x,y: "<< fx<<", "<< fy<<" principal point x,y: "<<cx<<", "<<cy<< std::endl;
+
+    ((pcl::OpenNIGrabber*)gKinectGrabber)->getDepthCameraIntrinsics( fx, fy, cx, cy );
+    std::cout << " Focal length x,y: "<< fx<<", "<< fy<<" principal point x,y: "<<cx<<", "<<cy<< std::endl;
+
+
 
     gProcessCloud = false;
   }

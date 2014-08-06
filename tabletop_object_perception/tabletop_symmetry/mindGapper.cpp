@@ -103,8 +103,6 @@ bool mindGapper::complete( pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud ) {
   Eigen::Vector3d np, cp, dir;
 
   dang = 2*mAlpha / (double) mM;
-  std::cout << "mM: "<< mM << " mN: "<< mN << std::endl;
-
     
   for( int i = 0; i < mM; ++i ) {
         
