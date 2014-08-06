@@ -11,7 +11,8 @@
  * @brief Constructor 
  */
 mindGapper::mindGapper() :
-  mCloud( new pcl::PointCloud<pcl::PointXYZ>() ) {
+  mCloud( new pcl::PointCloud<pcl::PointXYZ>() ),
+  mProjected( new pcl::PointCloud<pcl::PointXYZ>() ){
 
 }
 
@@ -63,6 +64,8 @@ bool mindGapper::complete( pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud ) {
   // 1. Project pointcloud to plane
   pcl::PointCloud<pcl::PointXYZ>::Ptr projected_cloud( new pcl::PointCloud<pcl::PointXYZ>() );
   projected_cloud = projectToPlane( _cloud );
+  mProjected = projected_cloud;
+
 
   // 2. Find eigenvalues
   pcl::PCA<pcl::PointXYZ> pca;
@@ -73,41 +76,63 @@ bool mindGapper::complete( pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud ) {
   Eigen::Vector4d c;
   pcl::compute3DCentroid( *projected_cloud, c );
   
+  mC << c(0), c(1), c(2);
+  mEa << (double) evec(0,0), (double) evec(1,0), (double) evec(2,0);
+  mEb << (double) evec(0,1), (double) evec(1,1), (double) evec(2,1);
 
-
-  std::cout << "Eigen values: \n"<< eval.transpose() << std::endl;
-  std::cout << "Eigen vectors: \n"<< evec << std::endl;
-  std::cout << "Centroid: \n"<< c.transpose() << std::endl;
 
   // 3. Pick the eigen vector most perpendicular to the viewing direction
-  Eigen::Vector3d v, s;
-  v << c(0), c(1), c(2);
-  Eigen::Vector3d ea, eb;
-  ea << (double) evec(0,0), (double) evec(1,0), (double) evec(2,0);
-  eb << (double) evec(0,1), (double) evec(1,1), (double) evec(2,1);
+  Eigen::Vector3d v, s, s_sample;
+  v = mC;
 
-  if( v.dot(ea) <= v.dot(eb) ) { s = ea; } 
-  else { s = eb; }
+  if( abs(v.dot(mEa)) <= abs(v.dot(mEb)) ) { s = mEa; } 
+  else { s = mEb; }
 
-
+  std::cout << "Eigen vectors: \n"<< mEa.transpose() << " and "<< mEb.transpose() << std::endl;
+  std::cout << "Eigen values: \n"<< eval(0) << " and "<< eval(1) << std::endl;
+  std::cout << "Centroid: \n"<< mC.transpose() << std::endl;
   std::cout << "** \t Most perpendicular eigenvector: "<< s.transpose() << std::endl;
+  
 
-  // 4. Set symmetry plane coefficients
+  // 4. Get rotation samples
+  Eigen::Vector3d Np; 
+  Np << mPlaneCoeffs(0), mPlaneCoeffs(1), mPlaneCoeffs(2); 
+  double ang, dang;
+
   Eigen::VectorXd sp(4);
-  Eigen::Vector3d np; np = s.cross( Eigen::Vector3d(mPlaneCoeffs(0), 
-						    mPlaneCoeffs(1), 
-						    mPlaneCoeffs(2)) );
-  np.normalize();
-  sp << np(0), np(1), np(2), -1*np.dot( Eigen::Vector3d(c(0), c(1), c(2)) );
+  Eigen::Vector3d np, cp, dir;
 
-  std::cout << "\t -- Plane coefficients: "<< sp.transpose() << std::endl;
+  dang = 2*mAlpha / (double) mM;
+  std::cout << "mM: "<< mM << " mN: "<< mN << std::endl;
 
-  // 5. Mirror
-  pcl::PointCloud<pcl::PointXYZ>::Ptr mirrored_cloud( new pcl::PointCloud<pcl::PointXYZ>() );
-  mirrored_cloud = mirrorFromPlane( _cloud, sp, false );
+    
+  for( int i = 0; i < mM; ++i ) {
+        
+    // Orientation
+    ang = -mAlpha +i*dang;
+    s_sample = Eigen::AngleAxisd( ang, Np )*s;
+    np = s_sample.cross( Np );
+    np.normalize();
+    
+    for( int j = 0; j < mN; ++j ) {
+      
+      // Translation
+      if( np.dot(v) > -np.dot(v) ) { dir = np; } else { dir = -np; }
+      cp = mC + dir*mDj*j;
+
+      //Set symmetry plane coefficients
+      sp << np(0), np(1), np(2), -1*np.dot( cp );
+
+      std::cout << "\t -- ["<<i<<","<<j<<"] Plane coefficients: "<< sp.transpose() << std::endl;
+
+      // 5. Mirror
+      pcl::PointCloud<pcl::PointXYZ>::Ptr mirrored_cloud( new pcl::PointCloud<pcl::PointXYZ>() );
+      mirrored_cloud = mirrorFromPlane( _cloud, sp, false );
+      mCandidates.push_back( mirrored_cloud );
+      }    
+  }
 
 
-  mCandidates.push_back( mirrored_cloud );
 
   return false;
 }
@@ -219,6 +244,52 @@ bool mindGapper::viewMirror( int _ind ) {
   }
 
 
+  return true;
+
+}
+
+/**
+ * @function viewInitialParameters
+ */
+bool mindGapper::viewInitialParameters() {
+
+
+  std::cout << "-- Visualizing initial parameters" << std::endl;
+  boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer( new pcl::visualization::PCLVisualizer("Initial") );
+  viewer->setBackgroundColor(0,0,0);
+  viewer->addCoordinateSystem(1.0, 0 );
+  viewer->initCameraParameters();
+
+  // Original green, mirror blue
+  pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> cloud_color( mCloud, 0, 255, 0 );
+  pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> projected_color( mProjected, 0, 0, 255 );
+  viewer->addPointCloud( mProjected, projected_color, "projected" );
+  viewer->addPointCloud( mCloud, cloud_color, "cloud" );
+  
+  // Center red ball
+  pcl::PointXYZ c;
+  c.x = mC(0); c.y = mC(1); c.z = mC(2);
+  double r, g, b;
+  r = 1; g = 0; b = 0;
+  viewer->addSphere( c, 0.015, r, g, b, "centroid" );
+
+  // Draw Eigen vectors: ea magenta, eb yellow
+  pcl::PointXYZ pea, peb;
+  double l = 0.20;
+  pea.x = c.x + mEa(0)*l;   pea.y = c.y + mEa(1)*l;   pea.z = c.z + mEa(2)*l;
+  peb.x = c.x + mEb(0)*l;   peb.y = c.y + mEb(1)*l;   peb.z = c.z + mEb(2)*l;
+
+  r = 1.0; g = 0.0; b = 1.0;
+  viewer->addLine( c, pea, r, g, b, "ea", 0 );
+  r = 1.0; g = 1.0; b = 0.0;
+  viewer->addLine( c, peb,  r, g, b, "eb", 0 );
+
+  while( !viewer->wasStopped() ) {
+    viewer->spinOnce(100);
+    boost::this_thread::sleep( boost::posix_time::microseconds(100000));
+  }
+
+  
   return true;
 
 }

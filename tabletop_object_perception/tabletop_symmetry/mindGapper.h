@@ -25,7 +25,7 @@ class mindGapper {
 
   // DEBUG FUNCTIONS
   bool viewMirror( int _ind );
-
+  bool viewInitialParameters();
 
  private:
   
@@ -34,7 +34,7 @@ class mindGapper {
 						       Eigen::VectorXd _plane,
 						       bool _joinMirrored = true );
 
-
+  pcl::PointCloud<pcl::PointXYZ>::Ptr mProjected;
   std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> mCandidates;
   pcl::PointCloud<pcl::PointXYZ>::Ptr mCloud;
 
@@ -44,4 +44,11 @@ class mindGapper {
   int mM;
   double mDj;
   double mAlpha;
+  
+  Eigen::Vector3d mC;
+  Eigen::Vector3d mEa, mEb;
+
+ public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  
 };

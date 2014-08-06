@@ -69,6 +69,7 @@ int main( int argc, char* argv[] ) {
   }
 
   mG.complete( cloud );
+  //mG.viewInitialParameters();
   mG.viewMirror( candidate_index );
 
   return 0;
