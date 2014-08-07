@@ -144,7 +144,9 @@ int mindGapper::complete( pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud ) {
 
 
   // 6. Evaluate (optimization)
-  mEvalValues.resize( mCandidates.size() );
+  mDelta.resize( mCandidates.size() );
+  mDelta1.resize( mCandidates.size() );
+  mDelta2.resize( mCandidates.size() );
 
   for( int i = 0; i < mCandidates.size(); ++i ) {
 
@@ -154,11 +156,9 @@ int mindGapper::complete( pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud ) {
     // Check inliers and outliers
     pcl::PointCloud<pcl::PointXYZ>::iterator it;
     int px, py; pcl::PointXYZ P;
-    int outside = 0; int front = 0; int behind = 0;
     
     int outOfMask = 0; int frontOfMask = 0;
-    double delta_1 = 0;
-    double delta_2 = 0;
+    double delta_1 = 0; double delta_2 = 0;
     for( it = mCandidates[i]->begin(); 
 	 it != mCandidates[i]->end(); ++it ) {
       P = (*it);
@@ -185,93 +185,43 @@ int mindGapper::complete( pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud ) {
 
       }
  
-      // BEGIN DEBUG -------------------------------
-      // Outside segmented mask - RED
-      if( mMarkMask.at<uchar>(py,px) != 255 ) {
-	cv::Vec3b col(0,0,255);
-	mark_i.at<cv::Vec3b>(py,px) = col;
-	outside++;
-      } 
-      // If inside
-      else {
-	// If in front of visible  - BLUE
-	if( (float)P.z < mDepthMask.at<float>(py,px) ) {
-	  cv::Vec3b col(255,0,0);
-	  mark_i.at<cv::Vec3b>(py,px) = col;
-	  front++;
-	} else {
-	  // If behind - GREEN
-	  cv::Vec3b col(0,255,0);
-	  mark_i.at<cv::Vec3b>(py,px) = col;
-	  behind++;
-	}
-      }
-      // END DEBUG ----------------------------------
 
     } // end for it
     
     // Expected values
-    delta_1 = delta_1 / outOfMask;
-    delta_2 = delta_2 / frontOfMask;
-    delta_2 = delta_2 * 1000.0 / 0.00780; // mmx pix/mm
+    mDelta1[i] = delta_1 / outOfMask;
+    mDelta2[i] =  frontOfMask; //(delta_2 / frontOfMask);// * 1000.0 / 0.00780; // mmx pix/mm
 
-    mEvalValues[i] = delta_1 + delta_2;
+    mDelta[i] = mDelta1[i] + mDelta2[i];
 
-    char name[50];
-    /*
-      std::cout << " Candidate ["<<i<<"]: Outside: "<< outside<<" front: "<< front << " and behind: "<< behind << " - TOTAL: "<< outside + front + behind << " E d1: "<< delta_1 << " d2: "<< delta_2 <<std::endl;*/
-    sprintf( name, "candidate_%d.png", i );
-    imwrite( name, mark_i );
-    
+    std::cout << "["<<i<<"] Front of mask: "<< frontOfMask << std::endl;    
   } // for each candidate
-
-  // INIT DEBUG -----------------------------------
-
-  int out; int in;
-  for( int i = 0; i < mCandidates.size(); ++i ) {
-    out = 0; in = 0;
-    cv::Mat debug_i = cv::Mat::zeros( mHeight, mWidth, CV_8UC3 );
-
-    cv::Mat candMark, candDepth;
-    generate2DMask( mCandidates[i],
-		    candMark, candDepth );
-    
-
-    cv::Vec3b ORIGINAL( 0,255, 0 );
-    cv::Vec3b MIRROR( 0, 0, 255 );
-    for( int j = 0; j < mHeight; ++j ) {
-      for( int k = 0; k < mWidth; ++k ) {
-	if( mMarkMask.at<uchar>(j,k) == 255 ) {
-	  debug_i.at<cv::Vec3b>(j,k) = ORIGINAL;
-	}
-      }
-    }
-
-    for( int j = 0; j < mHeight; ++j ) {
-      for( int k = 0; k < mWidth; ++k ) {
-	if( candMark.at<uchar>(j,k) == 255 ) {
-	  if( mMarkMask.at<uchar>(j,k) == 255 ) { in++; continue; }
-	  else { debug_i.at<cv::Vec3b>(j,k) = MIRROR; out++; }
-
-	}
-      }
-    }
-    char debugName[50];
-    sprintf( debugName, "debug_%d.png", i );
-    imwrite( debugName, debug_i );
-    // END DEBUG ------------------------------------
-
-    
-  } // for each candidate
-
+ 
 
   // Return cloud with highest metric
-  int minInd = 0; double minVal = mEvalValues[0];
-  for( int i = 1; i < mEvalValues.size(); ++i ) {
-    if( mEvalValues[i] < minVal ) { minVal = mEvalValues[i]; minInd = i; }
+  int minInd = 0; double minVal = mDelta1[0];
+  for( int i = 1; i < mDelta1.size(); ++i ) {
+    if( mDelta1[i] < minVal ) { minVal = mDelta1[i]; minInd = i; }
   }
 
-  std::cout << "Mirror is candidate with index: "<< minInd << std::endl;
+  int g = minInd / mN;
+  std::cout << " Candidate with more overlapping (good) is: "<< minInd <<" from group "<<g<< std::endl;
+
+  int oldMinInd = minInd;
+
+  minInd = oldMinInd; minVal = mDelta2[minInd];
+  for( int i = oldMinInd; i < (g+1)*mN; ++i ) {
+    std::cout <<"[ "<<i<<"] D1: "<< mDelta1[i]<< " and D2: "<< mDelta2[i] << std::endl;
+    
+    // If next in group has exceedingly more out-of-masks pixels, stop searching
+    if( mDelta1[i] - mDelta1[oldMinInd] > 0.5 ) {
+      break;
+    }
+
+    if( mDelta2[i] < minVal ) { minVal = mDelta2[i]; minInd = i; }
+  }
+  
+  std::cout << "Final  candidate with lowest front index is: "<< minInd << std::endl;
   _cloud = mCandidates[minInd];
 
   return minInd;
@@ -280,6 +230,7 @@ int mindGapper::complete( pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud ) {
 
 /**
  * @function projectToPlane
+ * @brief Project _cloud to plane (set by setTablePlane), results in a 2D cloud
  */
 pcl::PointCloud<pcl::PointXYZ>::Ptr mindGapper::projectToPlane( pcl::PointCloud<pcl::PointXYZ>::Ptr _cloud ) {
 
@@ -315,6 +266,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr mindGapper::projectToPlane( pcl::PointCloud<
 
 /**
  * @function mirrorFromPlane
+ * @brief Mirror pointcloud around _plane 
  */
 pcl::PointCloud<pcl::PointXYZ>::Ptr mindGapper::mirrorFromPlane( pcl::PointCloud<pcl::PointXYZ>::Ptr _cloud,
 								 Eigen::VectorXd _plane,
@@ -371,7 +323,7 @@ bool mindGapper::viewMirror( int _ind ) {
   viewer->addCoordinateSystem(1.0, 0 );
   viewer->initCameraParameters();
 
-  // Original green, mirror blue
+  // Original - GREEN, mirror - BLUE
   pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> cloud_color( mCloud, 0, 255, 0 );
   pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> mirror_color( mCandidates[_ind], 0, 0, 255 );
   viewer->addPointCloud( mCandidates[_ind], mirror_color, "mirror_cloud" );
@@ -388,7 +340,57 @@ bool mindGapper::viewMirror( int _ind ) {
 }
 
 /**
+ * @function printMirror
+ */
+void mindGapper::printMirror( int _ind ) {
+
+  if( _ind < 0 || _ind >= mCandidates.size() ) { std::cout << "NO PRINTING"<< std::endl; return; }
+
+  pcl::PointCloud<pcl::PointXYZ>::iterator it;
+  int px, py; pcl::PointXYZ P;
+  int outside = 0; int front = 0; int behind = 0;
+
+  cv::Mat mark_i = cv::Mat::zeros( mHeight, mWidth, CV_8UC3 );
+
+  for( it = mCandidates[_ind]->begin(); 
+       it != mCandidates[_ind]->end(); ++it ) {
+    P = (*it);
+    px = (int)( mF*(P.x / P.z) + mCx );
+    py = (int)( mF*(P.y / P.z) + mCy );
+    
+    // If outside: YELLOW
+    if( mMarkMask.at<uchar>(py,px) != 255 ) {
+      cv::Vec3b col(0,255,255);
+      mark_i.at<cv::Vec3b>(py,px) = col;
+      outside++;
+    } 
+    // If inside
+    else {
+      // If in front of visible  - MAGENTA
+      if( (float)P.z < mDepthMask.at<float>(py,px) ) {
+	cv::Vec3b col(255,0,255);
+	mark_i.at<cv::Vec3b>(py,px) = col;
+	front++;
+      } else {
+	// If behind - CYAN
+	cv::Vec3b col(255,255,0);
+	mark_i.at<cv::Vec3b>(py,px) = col;
+	behind++;
+      }
+    }
+
+  } // end for it
+
+    char name[50];
+    sprintf( name, "candidate_%d.png", _ind );
+    imwrite( name, mark_i );
+
+}
+
+
+/**
  * @function viewInitialParameters
+ * @brief View projected cloud, centroid and 2 eigenvalues Ea and Eb
  */
 bool mindGapper::viewInitialParameters() {
 
@@ -433,9 +435,9 @@ bool mindGapper::viewInitialParameters() {
 
 
 
-
 /**
- * @function view2DMask
+ * @function generate2DMask
+ * @brief Generates image with visible segmented pixels from _segmented_cloud, _depthMask stores the depth of each
  */
 bool mindGapper::generate2DMask( pcl::PointCloud<pcl::PointXYZ>::Ptr _segmented_cloud,
 				 cv::Mat &_markMask,
@@ -445,7 +447,7 @@ bool mindGapper::generate2DMask( pcl::PointCloud<pcl::PointXYZ>::Ptr _segmented_
   _depthMask = cv::Mat::zeros( mHeight, mWidth, CV_32FC1 );
   
   
-  // Color the segmented crap
+  // Color the segmented pixels
   pcl::PointCloud<pcl::PointXYZ>::iterator it;
   pcl::PointXYZ P;
   int px; int py;

@@ -47,6 +47,7 @@ class mindGapper {
 
   // Debug functions
   bool viewMirror( int _ind );
+  void printMirror( int _ind );
   pcl::PointCloud<pcl::PointXYZ>::Ptr getCandidate(int _ind) { return mCandidates[_ind]; }
   bool viewInitialParameters();
 
@@ -60,7 +61,9 @@ class mindGapper {
 
   pcl::PointCloud<pcl::PointXYZ>::Ptr mProjected;
   std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> mCandidates;
-  std::vector<double> mEvalValues;
+  std::vector<double> mDelta;
+  std::vector<double> mDelta1;
+  std::vector<double> mDelta2;
   pcl::PointCloud<pcl::PointXYZ>::Ptr mCloud;
 
   /**< Variables */
