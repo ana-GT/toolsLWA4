@@ -50,10 +50,11 @@ int main( int argc, char* argv[] ) {
   coeffs[3] =  0.472441;
   
   // Set plane
-  mG.setPlane( coeffs );
+  mG.setTablePlane( coeffs );
   
   // Set parameters for the optimization search of the best plane
-  mG.setParams( 6, 5, 0.01, M_PI / 9.0 );
+  mG.setFittingParams( 6, 5, 0.01, M_PI / 9.0 );
+  mG.setDeviceParams();
 
   // Convert (Debug version fires up a 
   char name[100];
@@ -68,10 +69,8 @@ int main( int argc, char* argv[] ) {
     return 1;
   }
 
-  if( !mG.complete( cloud ) ) { std::cout<< " FALSE!!!!" << std::endl; }
-  mG.viewInitialParameters();
 
-  mG.viewMirror( candidate_index );
+  mG.viewMirror(  mG.complete( cloud ) );
 
   // Display
   int key;

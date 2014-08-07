@@ -1,10 +1,16 @@
 /**
  * @file mindGapper.cpp
+ * @brief Implementation of paper by Bohg, 2010: Mind the Gap: Robotic Grasping under Incomplete Observation
+ * @author A. Huaman Quispe <ahuaman3@gatech.edu>
+ * @date 2014/08/07
  */
-#include "mindGapper.h"
+
 #include <pcl/visualization/cloud_viewer.h>
 #include <pcl/common/pca.h>
 #include <pcl/common/centroid.h>
+
+#include "mindGapper.h"
+#include <tabletop_symmetry/dt/dt.h>
 
 
 /**
@@ -14,14 +20,6 @@
 mindGapper::mindGapper() :
   mCloud( new pcl::PointCloud<pcl::PointXYZ>() ),
   mProjected( new pcl::PointCloud<pcl::PointXYZ>() ){
-
-  // Hard-coded
-  mWidth = 640;
-  mHeight = 480;
-  mF = 525;
-  mCx = 320; mCy = 240;
-  
-
 }
 
 /**
@@ -33,10 +31,10 @@ mindGapper::~mindGapper() {
 }
 
 /**
- * @function setPlane
+ * @function setTablePlane
  * @brief Set resting plane and object to complete based on symmetry
  */
-void mindGapper::setPlane( std::vector<double> _planeCoeffs ) {
+void mindGapper::setTablePlane( std::vector<double> _planeCoeffs ) {
   
   mPlaneCoeffs.resize( _planeCoeffs.size() );
   for( int i = 0; i < _planeCoeffs.size(); ++i ) {
@@ -48,12 +46,13 @@ void mindGapper::setPlane( std::vector<double> _planeCoeffs ) {
   mPlaneCoeffs = mPlaneCoeffs / norm;
 }
 
+
 /**
- * @function setParams
+ * @function setFittingParams
  * @brief n: Distance steps, m: Orientation steps, dj: Distance step size, alpha: +- rotation step size
  */
-void mindGapper::setParams( int _n, int _m, 
-			    double _dj, double _alpha ) {
+void mindGapper::setFittingParams( int _n, int _m, 
+				   double _dj, double _alpha ) {
   mN = _n;
   mM = _m;
   mDj = _dj;
@@ -61,62 +60,73 @@ void mindGapper::setParams( int _n, int _m,
 }
 
 /**
+ * @function setDeviceParams
+ * @brief Set parameters of Kinect to calculate fitness functions for optimization process
+ */
+void mindGapper::setDeviceParams( int _width, int _height, 
+				  double _focal_length_in_pixels,
+				  double _cx, double _cy ) {
+  
+  mWidth = _width; mHeight = _height;
+  mF = _focal_length_in_pixels;
+  mCx = _cx; mCy = _cy;
+}
+
+
+/**
  * @function complete
  * @brief Use symmetries on plane to complete pointcloud 
  */
-bool mindGapper::complete( pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud ) {
-
-  // 0. Store cloud and its mask
+int mindGapper::complete( pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud ) {
+  
+  // 0. Store cloud, its visibility mask, its depth in a 2D matrix and the distance transform of it
   mCloud = _cloud;
   this->generate2DMask( mCloud,
 			mMarkMask,
 			mDepthMask );
-
+  mDTMask = matDT( mMarkMask );
 
   // 1. Project pointcloud to plane
-  pcl::PointCloud<pcl::PointXYZ>::Ptr projected_cloud( new pcl::PointCloud<pcl::PointXYZ>() );
-  projected_cloud = projectToPlane( _cloud );
-  mProjected = projected_cloud;
+  mProjected = projectToPlane( mCloud );
+  
 
-
-  // 2. Find eigenvalues
+  // 2. Find eigenvalues (first two,the last one will be zero since projected cloud is in 2D)
   pcl::PCA<pcl::PointXYZ> pca;
-  pca.setInputCloud( projected_cloud );
+  pca.setInputCloud( mProjected );
   Eigen::Vector3f eval = pca.getEigenValues();
   Eigen::Matrix3f evec = pca.getEigenVectors();
 
   Eigen::Vector4d c;
-  pcl::compute3DCentroid( *projected_cloud, c );
+  pcl::compute3DCentroid( *mProjected, c );
   
   mC << c(0), c(1), c(2);
   mEa << (double) evec(0,0), (double) evec(1,0), (double) evec(2,0);
   mEb << (double) evec(0,1), (double) evec(1,1), (double) evec(2,1);
 
 
-  // 3. Pick the eigen vector most perpendicular to the viewing direction
+  // 3. Choose the eigen vector most perpendicular to the viewing direction as initial guess for symmetry plane
   Eigen::Vector3d v, s, s_sample;
-  v = mC;
+  v = mC; // viewing vector from Kinect origin (0,0,0) to centroid of projected cloud (mC)
 
+  // s: Line which is the intersection between symmetry and table planes
   if( abs(v.dot(mEa)) <= abs(v.dot(mEb)) ) { s = mEa; } 
   else { s = mEb; }
 
   
-  // 4. Get rotation samples
+  // 4. Get candidate planes by shifting centroid and rotating initial guess
   Eigen::Vector3d Np; 
-  Np << mPlaneCoeffs(0), mPlaneCoeffs(1), mPlaneCoeffs(2); 
   double ang, dang;
-
   Eigen::VectorXd sp(4);
   Eigen::Vector3d np, cp, dir;
 
-  dang = 2*mAlpha / (double) mM;
+  Np << mPlaneCoeffs(0), mPlaneCoeffs(1), mPlaneCoeffs(2); 
+  dang = 2*mAlpha / (double) (mM-1);
     
   for( int i = 0; i < mM; ++i ) {
         
     ang = -mAlpha +i*dang;
     s_sample = Eigen::AngleAxisd( ang, Np )*s;
-    np = s_sample.cross( Np );
-    np.normalize();
+    np = s_sample.cross( Np ); np.normalize();
     
     for( int j = 0; j < mN; ++j ) {
 
@@ -127,14 +137,15 @@ bool mindGapper::complete( pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud ) {
       sp << np(0), np(1), np(2), -1*np.dot( cp );
 
       // 5. Mirror
-      pcl::PointCloud<pcl::PointXYZ>::Ptr mirrored_cloud( new pcl::PointCloud<pcl::PointXYZ>() );
-      mirrored_cloud = mirrorFromPlane( _cloud, sp, false );
-      mCandidates.push_back( mirrored_cloud );
+      mCandidates.push_back( mirrorFromPlane(_cloud, sp, false) );
+
     } // end for N    
   } // end for M
 
 
-  // 6. Evaluate
+  // 6. Evaluate (optimization)
+  mEvalValues.resize( mCandidates.size() );
+
   for( int i = 0; i < mCandidates.size(); ++i ) {
 
     cv::Mat mark_i = cv::Mat::zeros( mHeight, mWidth, CV_8UC3 );
@@ -144,16 +155,37 @@ bool mindGapper::complete( pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud ) {
     pcl::PointCloud<pcl::PointXYZ>::iterator it;
     int px, py; pcl::PointXYZ P;
     int outside = 0; int front = 0; int behind = 0;
+    
+    int outOfMask = 0; int frontOfMask = 0;
+    double delta_1 = 0;
+    double delta_2 = 0;
     for( it = mCandidates[i]->begin(); 
 	 it != mCandidates[i]->end(); ++it ) {
       P = (*it);
-      px = round( mF*(P.x / P.z) + mCx );
-      py = round( mF*(P.y / P.z) + mCy );
+      px = (int)( mF*(P.x / P.z) + mCx );
+      py = (int)( mF*(P.y / P.z) + mCy );
+
+      if( px < 0 || px >= mWidth ) { return -1; }
+      if( py < 0 || py >= mHeight ) { return -1; }
       
 
-      if( px < 0 || px >= mWidth ) { return false; }
-      if( py < 0 || py >= mHeight ) { return false; }
+      // MEASURE 1: OUT-OF-MASK PIXELS DISTANCE TO CLOSEST MASK PIXEL
+      if( mMarkMask.at<uchar>(py,px) != 255 ) {
+	outOfMask++;
+	delta_1 += mDTMask.at<float>(py,px);
+      }
+
+      // MEASURE 2: IN-MASK PIXELS IN FRONT OF VISIBLE PIXELS
+      else {
+	double d = P.z - (double)(mDepthMask.at<float>(py,px));
+	if( d < 0 ) {
+	  frontOfMask++;
+	  delta_2 += -d;
+	}
+
+      }
  
+      // BEGIN DEBUG -------------------------------
       // Outside segmented mask - RED
       if( mMarkMask.at<uchar>(py,px) != 255 ) {
 	cv::Vec3b col(0,0,255);
@@ -162,7 +194,7 @@ bool mindGapper::complete( pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud ) {
       } 
       // If inside
       else {
-	// If in front of visible BLUE
+	// If in front of visible  - BLUE
 	if( (float)P.z < mDepthMask.at<float>(py,px) ) {
 	  cv::Vec3b col(255,0,0);
 	  mark_i.at<cv::Vec3b>(py,px) = col;
@@ -174,18 +206,26 @@ bool mindGapper::complete( pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud ) {
 	  behind++;
 	}
       }
-    
+      // END DEBUG ----------------------------------
 
-    } // for it
+    } // end for it
     
+    // Expected values
+    delta_1 = delta_1 / outOfMask;
+    delta_2 = delta_2 / frontOfMask;
+    delta_2 = delta_2 * 1000.0 / 0.00780; // mmx pix/mm
+
+    mEvalValues[i] = delta_1 + delta_2;
+
     char name[50];
-    std::cout << " Candidate ["<<i<<"]: Outside: "<< outside<<" front: "<< front << " and behind: "<< behind << " - TOTAL: "<< outside + front + behind <<std::endl;
+    /*
+      std::cout << " Candidate ["<<i<<"]: Outside: "<< outside<<" front: "<< front << " and behind: "<< behind << " - TOTAL: "<< outside + front + behind << " E d1: "<< delta_1 << " d2: "<< delta_2 <<std::endl;*/
     sprintf( name, "candidate_%d.png", i );
     imwrite( name, mark_i );
     
   } // for each candidate
 
-  // DEBUG
+  // INIT DEBUG -----------------------------------
 
   int out; int in;
   for( int i = 0; i < mCandidates.size(); ++i ) {
@@ -216,18 +256,25 @@ bool mindGapper::complete( pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud ) {
 	}
       }
     }
-    std::cout<<"DEBUG ["<<i<<"]: IN: "<<in<<" OUT: "<< out <<" TOTAL: "<< in + out << std::endl;
     char debugName[50];
     sprintf( debugName, "debug_%d.png", i );
     imwrite( debugName, debug_i );
-
+    // END DEBUG ------------------------------------
 
     
   } // for each candidate
 
 
+  // Return cloud with highest metric
+  int minInd = 0; double minVal = mEvalValues[0];
+  for( int i = 1; i < mEvalValues.size(); ++i ) {
+    if( mEvalValues[i] < minVal ) { minVal = mEvalValues[i]; minInd = i; }
+  }
 
-  return true;
+  std::cout << "Mirror is candidate with index: "<< minInd << std::endl;
+  _cloud = mCandidates[minInd];
+
+  return minInd;
 }
 
 
@@ -315,11 +362,10 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr mindGapper::mirrorFromPlane( pcl::PointCloud
  */
 bool mindGapper::viewMirror( int _ind ) {
 
-  if( _ind >= mCandidates.size() ) {
+  if( _ind >= mCandidates.size() || _ind < 0 ) {
     return false; 
   }
 
-  std::cout << "-- Visualizing cloud" << std::endl;
   boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer( new pcl::visualization::PCLVisualizer("Mind Gap") );
   viewer->setBackgroundColor(0,0,0);
   viewer->addCoordinateSystem(1.0, 0 );
@@ -346,8 +392,6 @@ bool mindGapper::viewMirror( int _ind ) {
  */
 bool mindGapper::viewInitialParameters() {
 
-
-  std::cout << "-- Visualizing initial parameters" << std::endl;
   boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer( new pcl::visualization::PCLVisualizer("Initial") );
   viewer->setBackgroundColor(0,0,0);
   viewer->addCoordinateSystem(1.0, 0 );
@@ -406,32 +450,20 @@ bool mindGapper::generate2DMask( pcl::PointCloud<pcl::PointXYZ>::Ptr _segmented_
   pcl::PointXYZ P;
   int px; int py;
   
-  int repeated = 0;
-
   for( it = _segmented_cloud->begin(); 
        it != _segmented_cloud->end(); ++it ) {
     P = (*it);
-    px = round( mF*(P.x / P.z) + mCx );
-    py = round( mF*(P.y / P.z) + mCy );
-
-    if( px == -1 ) { px = 0; }
-    if( py == -1 ) { py = 0; }
-    if( px == mWidth ) { px = mWidth - 1; }
-    if( py == mHeight ) { py = mHeight - 1; }
-    
+    px = (int)( mF*(P.x / P.z) + mCx );
+    py = (int)( mF*(P.y / P.z) + mCy );
 
     if( px < 0 || px >= mWidth ) { return false; }
     if( py < 0 || py >= mHeight ) { return false; }
     
 
-    if(  _markMask.at<uchar>(py,px) == 255 ) {
-      repeated++;
-    }
     _markMask.at<uchar>(py,px) = 255;
     _depthMask.at<float>(py,px) = (float)P.z;
   }
   
-  std::cout << "Repeated points: "<< repeated << std::endl;
 
   return true;
 }

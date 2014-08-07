@@ -46,3 +46,9 @@ add_executable( testImage testImage.cpp )
 target_link_libraries( testImage  ${OpenCV_LIBS} ${PCL_LIBRARIES} )
 set_target_properties( testImage PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin
   RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin )
+
+# dt_test
+add_executable( dt_test dt_test.cpp )
+target_link_libraries( dt_test  dt ${OpenCV_LIBS} )
+set_target_properties( dt_test PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin
+  RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin )
