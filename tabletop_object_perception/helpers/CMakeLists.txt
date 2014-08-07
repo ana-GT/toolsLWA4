@@ -40,3 +40,9 @@ add_executable( tabletop_symmetry_test tabletop_symmetry_test.cpp )
 target_link_libraries( tabletop_symmetry_test mindGapper ${OpenCV_LIBS} ${PCL_LIBRARIES} )
 set_target_properties( tabletop_symmetry_test PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin
   RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin )
+
+# test_image
+add_executable( testImage testImage.cpp )
+target_link_libraries( testImage  ${OpenCV_LIBS} ${PCL_LIBRARIES} )
+set_target_properties( testImage PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin
+  RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin )

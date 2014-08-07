@@ -6,6 +6,7 @@
 #include <pcl/common/pca.h>
 #include <pcl/common/centroid.h>
 
+
 /**
  * @function mindGapper
  * @brief Constructor 
@@ -13,6 +14,13 @@
 mindGapper::mindGapper() :
   mCloud( new pcl::PointCloud<pcl::PointXYZ>() ),
   mProjected( new pcl::PointCloud<pcl::PointXYZ>() ){
+
+  // Hard-coded
+  mWidth = 640;
+  mHeight = 480;
+  mF = 525;
+  mCx = 320; mCy = 240;
+  
 
 }
 
@@ -58,8 +66,12 @@ void mindGapper::setParams( int _n, int _m,
  */
 bool mindGapper::complete( pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud ) {
 
-  // 0. Store
+  // 0. Store cloud and its mask
   mCloud = _cloud;
+  this->generate2DMask( mCloud,
+			mMarkMask,
+			mDepthMask );
+
 
   // 1. Project pointcloud to plane
   pcl::PointCloud<pcl::PointXYZ>::Ptr projected_cloud( new pcl::PointCloud<pcl::PointXYZ>() );
@@ -88,12 +100,7 @@ bool mindGapper::complete( pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud ) {
   if( abs(v.dot(mEa)) <= abs(v.dot(mEb)) ) { s = mEa; } 
   else { s = mEb; }
 
-  std::cout << "Eigen vectors: \n"<< mEa.transpose() << " and "<< mEb.transpose() << std::endl;
-  std::cout << "Eigen values: \n"<< eval(0) << " and "<< eval(1) << std::endl;
-  std::cout << "Centroid: \n"<< mC.transpose() << std::endl;
-  std::cout << "** \t Most perpendicular eigenvector: "<< s.transpose() << std::endl;
   
-
   // 4. Get rotation samples
   Eigen::Vector3d Np; 
   Np << mPlaneCoeffs(0), mPlaneCoeffs(1), mPlaneCoeffs(2); 
@@ -106,33 +113,121 @@ bool mindGapper::complete( pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud ) {
     
   for( int i = 0; i < mM; ++i ) {
         
-    // Orientation
     ang = -mAlpha +i*dang;
     s_sample = Eigen::AngleAxisd( ang, Np )*s;
     np = s_sample.cross( Np );
     np.normalize();
     
     for( int j = 0; j < mN; ++j ) {
-      
-      // Translation
+
       if( np.dot(v) > -np.dot(v) ) { dir = np; } else { dir = -np; }
       cp = mC + dir*mDj*j;
 
       //Set symmetry plane coefficients
       sp << np(0), np(1), np(2), -1*np.dot( cp );
 
-      std::cout << "\t -- ["<<i<<","<<j<<"] Plane coefficients: "<< sp.transpose() << std::endl;
-
       // 5. Mirror
       pcl::PointCloud<pcl::PointXYZ>::Ptr mirrored_cloud( new pcl::PointCloud<pcl::PointXYZ>() );
       mirrored_cloud = mirrorFromPlane( _cloud, sp, false );
       mCandidates.push_back( mirrored_cloud );
-      }    
-  }
+    } // end for N    
+  } // end for M
+
+
+  // 6. Evaluate
+  for( int i = 0; i < mCandidates.size(); ++i ) {
+
+    cv::Mat mark_i = cv::Mat::zeros( mHeight, mWidth, CV_8UC3 );
+
+
+    // Check inliers and outliers
+    pcl::PointCloud<pcl::PointXYZ>::iterator it;
+    int px, py; pcl::PointXYZ P;
+    int outside = 0; int front = 0; int behind = 0;
+    for( it = mCandidates[i]->begin(); 
+	 it != mCandidates[i]->end(); ++it ) {
+      P = (*it);
+      px = round( mF*(P.x / P.z) + mCx );
+      py = round( mF*(P.y / P.z) + mCy );
+      
+
+      if( px < 0 || px >= mWidth ) { return false; }
+      if( py < 0 || py >= mHeight ) { return false; }
+ 
+      // Outside segmented mask - RED
+      if( mMarkMask.at<uchar>(py,px) != 255 ) {
+	cv::Vec3b col(0,0,255);
+	mark_i.at<cv::Vec3b>(py,px) = col;
+	outside++;
+      } 
+      // If inside
+      else {
+	// If in front of visible BLUE
+	if( (float)P.z < mDepthMask.at<float>(py,px) ) {
+	  cv::Vec3b col(255,0,0);
+	  mark_i.at<cv::Vec3b>(py,px) = col;
+	  front++;
+	} else {
+	  // If behind - GREEN
+	  cv::Vec3b col(0,255,0);
+	  mark_i.at<cv::Vec3b>(py,px) = col;
+	  behind++;
+	}
+      }
+    
+
+    } // for it
+    
+    char name[50];
+    std::cout << " Candidate ["<<i<<"]: Outside: "<< outside<<" front: "<< front << " and behind: "<< behind << " - TOTAL: "<< outside + front + behind <<std::endl;
+    sprintf( name, "candidate_%d.png", i );
+    imwrite( name, mark_i );
+    
+  } // for each candidate
+
+  // DEBUG
+
+  int out; int in;
+  for( int i = 0; i < mCandidates.size(); ++i ) {
+    out = 0; in = 0;
+    cv::Mat debug_i = cv::Mat::zeros( mHeight, mWidth, CV_8UC3 );
+
+    cv::Mat candMark, candDepth;
+    generate2DMask( mCandidates[i],
+		    candMark, candDepth );
+    
+
+    cv::Vec3b ORIGINAL( 0,255, 0 );
+    cv::Vec3b MIRROR( 0, 0, 255 );
+    for( int j = 0; j < mHeight; ++j ) {
+      for( int k = 0; k < mWidth; ++k ) {
+	if( mMarkMask.at<uchar>(j,k) == 255 ) {
+	  debug_i.at<cv::Vec3b>(j,k) = ORIGINAL;
+	}
+      }
+    }
+
+    for( int j = 0; j < mHeight; ++j ) {
+      for( int k = 0; k < mWidth; ++k ) {
+	if( candMark.at<uchar>(j,k) == 255 ) {
+	  if( mMarkMask.at<uchar>(j,k) == 255 ) { in++; continue; }
+	  else { debug_i.at<cv::Vec3b>(j,k) = MIRROR; out++; }
+
+	}
+      }
+    }
+    std::cout<<"DEBUG ["<<i<<"]: IN: "<<in<<" OUT: "<< out <<" TOTAL: "<< in + out << std::endl;
+    char debugName[50];
+    sprintf( debugName, "debug_%d.png", i );
+    imwrite( debugName, debug_i );
+
+
+    
+  } // for each candidate
 
 
 
-  return false;
+  return true;
 }
 
 
@@ -291,3 +386,55 @@ bool mindGapper::viewInitialParameters() {
   return true;
 
 }
+
+
+
+
+/**
+ * @function view2DMask
+ */
+bool mindGapper::generate2DMask( pcl::PointCloud<pcl::PointXYZ>::Ptr _segmented_cloud,
+				 cv::Mat &_markMask,
+				 cv::Mat &_depthMask ) {
+
+  _markMask = cv::Mat::zeros( mHeight, mWidth, CV_8UC1 );
+  _depthMask = cv::Mat::zeros( mHeight, mWidth, CV_32FC1 );
+  
+  
+  // Color the segmented crap
+  pcl::PointCloud<pcl::PointXYZ>::iterator it;
+  pcl::PointXYZ P;
+  int px; int py;
+  
+  int repeated = 0;
+
+  for( it = _segmented_cloud->begin(); 
+       it != _segmented_cloud->end(); ++it ) {
+    P = (*it);
+    px = round( mF*(P.x / P.z) + mCx );
+    py = round( mF*(P.y / P.z) + mCy );
+
+    if( px == -1 ) { px = 0; }
+    if( py == -1 ) { py = 0; }
+    if( px == mWidth ) { px = mWidth - 1; }
+    if( py == mHeight ) { py = mHeight - 1; }
+    
+
+    if( px < 0 || px >= mWidth ) { return false; }
+    if( py < 0 || py >= mHeight ) { return false; }
+    
+
+    if(  _markMask.at<uchar>(py,px) == 255 ) {
+      repeated++;
+    }
+    _markMask.at<uchar>(py,px) = 255;
+    _depthMask.at<float>(py,px) = (float)P.z;
+  }
+  
+  std::cout << "Repeated points: "<< repeated << std::endl;
+
+  return true;
+}
+
+
+

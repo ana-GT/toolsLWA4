@@ -44,10 +44,10 @@ int main( int argc, char* argv[] ) {
 
   mindGapper mG;
   std::vector<double> coeffs(4);
-  coeffs[0] =  0.0444059;
-  coeffs[1] = -0.980867;
-  coeffs[2] = -0.189546;
-  coeffs[3] = 0.461201;
+  coeffs[0] =  0.0379817; 
+  coeffs[1] = -0.826591;
+  coeffs[2] = -0.561521;
+  coeffs[3] =  0.472441;
   
   // Set plane
   mG.setPlane( coeffs );
@@ -68,9 +68,23 @@ int main( int argc, char* argv[] ) {
     return 1;
   }
 
-  mG.complete( cloud );
-  //mG.viewInitialParameters();
+  if( !mG.complete( cloud ) ) { std::cout<< " FALSE!!!!" << std::endl; }
+  mG.viewInitialParameters();
+
   mG.viewMirror( candidate_index );
+
+  // Display
+  int key;
+  cv::Mat mask = mG.get2DMask();
+  imwrite( "originalMask.png", mask );
+  cv::imshow( "2D Segmented Mask", mask );
+  while(true) {
+    key = cv::waitKey(30);
+    if( key != -1) {
+      break;
+    }
+  }
+
 
   return 0;
 }

@@ -91,7 +91,6 @@ int main( int argc, char* argv[] ) {
     boost::function< void (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr&) > f = boost::bind( &grabberCallback, _1 );
     gKinectGrabber->registerCallback(f);
 
-
   }
 
   // Create viewer
@@ -162,12 +161,20 @@ void grabberCallback( const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &_cloud
     gTs.processCloud( _cloud );
 
     // Visualize camera parameters
-    double fx, fy, cx, cy;
-    fx = 0; fy = 0; cx = 0; cy = 0;
-    std::cout << " BEFORE: Focal length x,y: "<< fx<<", "<< fy<<" principal point x,y: "<<cx<<", "<<cy<< std::endl;
+    double f, cx, cy;
 
-    ((pcl::OpenNIGrabber*)gKinectGrabber)->getDepthCameraIntrinsics( fx, fy, cx, cy );
-    std::cout << " Focal length x,y: "<< fx<<", "<< fy<<" principal point x,y: "<<cx<<", "<<cy<< std::endl;
+    XnMapOutputMode m = ((pcl::OpenNIGrabber*)gKinectGrabber)->getDevice()->getDepthOutputMode();
+    int width, height;
+    width = (int) m.nXRes;
+    height = (int) m.nYRes;
+    
+    f = (double)((pcl::OpenNIGrabber*)gKinectGrabber)->getDevice()->getDepthFocalLength(0);
+    cx = width >> 1;
+    cy = height >> 1;
+    std::cout << " Focal length: "<< f<<" principal point x,y: "<<cx<<", "<<cy<< std::endl;
+
+
+    
 
 
 

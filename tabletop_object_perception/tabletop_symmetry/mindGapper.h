@@ -8,6 +8,10 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
+//-- OpenCV headers
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+
 /**
  * @class mindGapper
  */
@@ -22,6 +26,13 @@ class mindGapper {
   void setParams( int _n = 6, int _m = 5, 
 		  double _dj = 0.01, double _alpha = 20.0*M_PI / 180.0 );
   bool complete( pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud ); 
+  pcl::PointCloud<pcl::PointXYZ>::Ptr getCandidate(int _ind) { return mCandidates[_ind]; }
+  bool generate2DMask(  pcl::PointCloud<pcl::PointXYZ>::Ptr _segmented_cloud,
+			cv::Mat &_markMask,
+			cv::Mat &_depthMask );
+  cv::Mat get2DMask() { return mMarkMask; }
+  
+
 
   // DEBUG FUNCTIONS
   bool viewMirror( int _ind );
@@ -45,6 +56,11 @@ class mindGapper {
   double mDj;
   double mAlpha;
   
+  // Mask variables
+  double mF, mCx, mCy;
+  cv::Mat mMarkMask; cv::Mat mDepthMask;
+  int mWidth; int mHeight;
+
   Eigen::Vector3d mC;
   Eigen::Vector3d mEa, mEb;
 
