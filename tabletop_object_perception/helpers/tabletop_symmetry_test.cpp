@@ -58,7 +58,9 @@ int main( int argc, char* argv[] ) {
 
   // Convert (Debug version fires up a 
   char name[100];
-  sprintf( name, "/home/ana/Research/toolsLWA4/tabletop_object_perception/bin/testSim/cluster_%d.pcd",
+//  sprintf( name, "/home/ana/Research/toolsLWA4/tabletop_object_perception/bin/testSim/cluster_%d.pcd",
+//	   cloud_index );
+  sprintf( name, "/home/ana/GSoC/pcl/apps/sq_fitting/bin/testSim/cluster_%d.pcd",
 	   cloud_index );
   std::string filename( name );
 
@@ -70,6 +72,10 @@ int main( int argc, char* argv[] ) {
   }
 
   int index = mG.complete( cloud );
+
+	// Print 
+	pcl::io::savePCDFileASCII( "outputMirror.pcd", *cloud );
+
   mG.viewMirror( index );
   mG.printMirror( candidate_index );
 

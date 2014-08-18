@@ -222,8 +222,13 @@ int mindGapper::complete( pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud ) {
   }
   
   std::cout << "Final  candidate with lowest front index is: "<< minInd << std::endl;
-  _cloud = mCandidates[minInd];
 
+  _cloud = mCandidates[minInd];
+  for( int i = 0; i < mCloud->points.size(); ++i ) {
+	_cloud->points.push_back( mCloud->points[i] );
+  }
+	_cloud->width = _cloud->points.size();
+	_cloud->height = 1;
   return minInd;
 }
 

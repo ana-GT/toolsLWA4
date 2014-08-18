@@ -23,17 +23,18 @@ set_target_properties( showPCD PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURC
 
 
 # concave_hull_2d_test
-add_executable( concave_hull_2d concave_hull_2d.cpp )
-target_link_libraries( concave_hull_2d ${OpenCV_LIBS} ${PCL_LIBRARIES} )
-set_target_properties( concave_hull_2d PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin
-		       RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin )
+#add_executable( concave_hull_2d concave_hull_2d.cpp )
+#target_link_libraries( concave_hull_2d ${OpenCV_LIBS} ${PCL_LIBRARIES} )
+#set_target_properties( concave_hull_2d PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin
+#		       RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin )
 
 
 # tabletop_segmentation_test
-add_executable( tabletop_segmentation_test tabletop_segmentation_test.cpp )
-target_link_libraries( tabletop_segmentation_test tabletop_segmentation ${OpenCV_LIBS} ${PCL_LIBRARIES} )
-set_target_properties( tabletop_segmentation_test PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin
-		       RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin )
+#message( STATUS "Libraries of PCL: ${PCL_LIBRARIES}" )
+#add_executable( tabletop_segmentation_test tabletop_segmentation_test.cpp )
+#target_link_libraries( tabletop_segmentation_test tabletop_segmentation ${OpenCV_LIBS} ${PCL_LIBRARIES} )
+#set_target_properties( tabletop_segmentation_test PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin
+#		       RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin )
 
 # tabletop_symmeetry_test
 add_executable( tabletop_symmetry_test tabletop_symmetry_test.cpp )
@@ -43,7 +44,7 @@ set_target_properties( tabletop_symmetry_test PROPERTIES ARCHIVE_OUTPUT_DIRECTOR
 
 # test_image
 add_executable( testImage testImage.cpp )
-target_link_libraries( testImage  ${OpenCV_LIBS} ${PCL_LIBRARIES} )
+target_link_libraries( testImage  ${OpenCV_LIBS} ${PCL_LIBRARIES} pthread )
 set_target_properties( testImage PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin
   RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin )
 

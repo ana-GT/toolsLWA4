@@ -30,7 +30,7 @@ struct marker_t {
 enum markers_id {
     KINECT_TABLE_ID = 21,
     KINECT_ROBOT_ID = 0,
-    KINECT_OBJ1_ID = 24,
+    KINECT_OBJ1_ID = 20,
 };
 
 int NUM_MARKERS_SIM = 3;
