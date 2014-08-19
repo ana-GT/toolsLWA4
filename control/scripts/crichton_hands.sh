@@ -16,7 +16,7 @@
 
 # HANDS: esd CAN Interfaces
 CAN_SDH_L=0
-#CAN_SDH_R=1
+CAN_SDH_R=1
 
 
 #***********************
@@ -42,7 +42,7 @@ fi
 # 2. CREATE CHANNELS
 #*************************
 CHANNELS="sdhref-left sdhstate-left"
-#CHANNELS="$CHANNELS sdhref-right sdhstate-right"
+CHANNELS="$CHANNELS sdhref-right sdhstate-right"
 
 
 #******************************
@@ -72,8 +72,8 @@ crichton_hands_start() {
     # Run sdhiod daemon for SDH hands TOOK OUT THE BACKGROUND !!!!
     $SNS run -r sdh-left -- \
 	sdhiod -b $CAN_SDH_L -c sdhref-left -s sdhstate-left
-    #$SNS run -d -r sdh-right -- \
-	#sdhiod -b $CAN_SDH_R -c sdhref-right -s sdhstate-right
+    $SNS run -d -r sdh-right -- \
+	sdhiod -b $CAN_SDH_R -c sdhref-right -s sdhstate-right
 
 }
 
@@ -82,21 +82,21 @@ crichton_hands_expunge() {
     sudo rm -rf /var/tmp/sns/sdh-left
     sudo rm -rf /var/run/sns/sdh-left
 
-    #sudo rm -rf /var/tmp/sns/sdh-right
-    #sudo rm -rf /var/run/sns/sdh-right
+    sudo rm -rf /var/tmp/sns/sdh-right
+    sudo rm -rf /var/run/sns/sdh-right
 }
 
 # Stop: Stop daemons and programs
-crichton_utils_stop() {
+crichton_hands_stop() {
     $SNS kill sdh-left
-#    $SNS kill sdh-right
+    $SNS kill sdh-right
 }
 
-crichton_utils_steal() {
+crichton_hands_steal() {
     chown -R $1 /var/run/sns/sdh-left \
-#	/var/run/sns/sdh-right \
+	/var/run/sns/sdh-right \
 	/var/tmp/sns/sdh-left #\
-#	/var/tmp/sns/sdh-right 
+	/var/tmp/sns/sdh-right 
 }
 
 #*************************
