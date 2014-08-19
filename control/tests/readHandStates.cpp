@@ -39,7 +39,7 @@ int main( int argc, char* argv[] ) {
 
     {
 	ach_channel_t *chans[] = { &chan_sdhstate_left, 
-				   //&chan_sdhstate_right, 
+				   &chan_sdhstate_right, 
 				   NULL};
 	sns_sigcancel( chans, sns_sig_term_default );
     }
