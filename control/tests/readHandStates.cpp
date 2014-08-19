@@ -61,7 +61,7 @@ int main( int argc, char* argv[] ) {
 
     // Control, move a finger
     double x[SDH_AXES];
-    double tsec = 5.0;
+    double tsec = 10.0;
 
     // Read 
     printf("Update 1 \n");
@@ -79,8 +79,8 @@ int main( int argc, char* argv[] ) {
 
 
     // Make sure read left hand
-    if( ql[0] > 1.5 && ql[2] > 0.7 && ql[4] < -1.4) {
-	ql[4] = -1.0;
+    if( ql[0] > 1.5 && ql[2] > 0.7 ) {
+	ql[4] = -1.5;
 
 	std::cout << "Sending to pos: "<<std::endl;
 	for( int i = 0; i < SDH_AXES; ++i ) {
