@@ -87,7 +87,7 @@ crichton_hands_expunge() {
 }
 
 # Stop: Stop daemons and programs
-crichton_utils_stop() {
+crichton_hands_stop() {
     $SNS kill sdh-left
 #    $SNS kill sdh-right
 }
