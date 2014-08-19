@@ -70,7 +70,7 @@ crichton_hands_start() {
     crichton_hands_ach_mk
 
     # Run sdhiod daemon for SDH hands TOOK OUT THE BACKGROUND !!!!
-    $SNS run -r sdh-left -- \
+    $SNS run -d -r sdh-left -- \
 	sdhiod -b $CAN_SDH_L -c sdhref-left -s sdhstate-left
     $SNS run -d -r sdh-right -- \
 	sdhiod -b $CAN_SDH_R -c sdhref-right -s sdhstate-right
