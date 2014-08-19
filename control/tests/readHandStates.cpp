@@ -9,9 +9,9 @@
 #define SDH_AXES 7
 
 ach_channel_t chan_sdhstate_left;
-//ach_channel_t chan_sdhstate_right;
+ach_channel_t chan_sdhstate_right;
 double ql[SDH_AXES]; double dql[SDH_AXES];
-//double qr[SDH_AXES]; double dqr[SDH_AXES];
+double qr[SDH_AXES]; double dqr[SDH_AXES];
 struct timespec now;
 
 //***********************************************
@@ -35,7 +35,7 @@ int main( int argc, char* argv[] ) {
 
     // Open sdh state channels
     sns_chan_open( &chan_sdhstate_left, "sdhstate-left", NULL );
-    //sns_chan_open( &chan_sdhstate_right, "sdhstate-right", NULL );
+    sns_chan_open( &chan_sdhstate_right, "sdhstate-right", NULL );
 
     {
 	ach_channel_t *chans[] = { &chan_sdhstate_left, 
@@ -85,7 +85,6 @@ static void update( void ) {
     } printf("\n");
 
 
-    /*
     int u_sr = update_n( SDH_AXES, qr, dqr,
 			 &chan_sdhstate_right,
 			 &timeout );
@@ -98,8 +97,8 @@ static void update( void ) {
     for( int i = 0; i < SDH_AXES; ++i ) {
 	printf(" %f ", dqr[i] );
     } printf("\n");
-    */
-    is_updated = is_updated || u_sl; // || u_sr;
+    
+    is_updated = is_updated || u_sl || u_sr;
 			 
 }
 
