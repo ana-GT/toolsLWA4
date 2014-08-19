@@ -95,7 +95,7 @@ crichton_hands_stop() {
 crichton_hands_steal() {
     chown -R $1 /var/run/sns/sdh-left \
 	/var/run/sns/sdh-right \
-	/var/tmp/sns/sdh-left #\
+	/var/tmp/sns/sdh-left \
 	/var/tmp/sns/sdh-right 
 }
 
