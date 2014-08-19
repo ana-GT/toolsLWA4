@@ -6,8 +6,8 @@
 # AMINO_LIBRARIES - The libraries needed to use amino
 # *********************************************************
 
-find_path( amino_INCLUDE_DIR amino.h )
-find_library( amino_LIBRARY amino )
+find_path( amino_INCLUDE_DIR amino.h HINTS /usr/local/include ~/local/include )
+find_library( amino_LIBRARY amino HINTS /usr/local/lib ~/local/lib )
 
 set( AMINO_LIBRARIES ${amino_LIBRARY} )
 set( AMINO_INCLUDE_DIRS ${amino_INCLUDE_DIR} )

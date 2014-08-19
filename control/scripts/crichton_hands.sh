@@ -69,7 +69,7 @@ crichton_hands_start() {
     # Create channels
     crichton_hands_ach_mk
 
-    # Run sdhiod daemon for SDH hands TOOK OUT THE BACKGROUND !!!!
+    # Run sdhiod daemon for SDH hands
     $SNS run -d -r sdh-left -- \
 	sdhiod -b $CAN_SDH_L -c sdhref-left -s sdhstate-left
     $SNS run -d -r sdh-right -- \

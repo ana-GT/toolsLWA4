@@ -6,8 +6,8 @@
 # SNS_LIBRARIES - The libraries needed to use reflex
 # *********************************************************
 
-find_path( sns_INCLUDE_DIR sns.h )
-find_library( sns_LIBRARY sns )
+find_path( sns_INCLUDE_DIR sns.h HINTS /usr/local/include ~/local/include )
+find_library( sns_LIBRARY sns HINTS /usr/local/include ~/local/lib )
 
 set( SNS_LIBRARIES ${sns_LIBRARY} )
 set( SNS_INCLUDE_DIRS ${sns_INCLUDE_DIR} )
