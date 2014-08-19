@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <sns.h>
 #include <ach.h>
-
+#include <poll.h>
 
 #define SDH_AXES 7
 #define DJ 0.08726 // 5 degrees
@@ -53,7 +53,9 @@ int main( int argc, char* argv[] ) {
     int sdh_side = SDH_LEFT;
     double tsec = 3;
     int sdh_finger_ind; double dj;
-
+    struct pollfd stdin_poll;
+    stdin_poll.fd = STDIN_FILENO;
+    stdin_poll.events = POLLIN;
     //--------------------
     // 1. Parse
     //--------------------
@@ -109,19 +111,21 @@ int main( int argc, char* argv[] ) {
 	// Update, read pos and vel of hands
 	update();
 	// Check if user put input
-	if( check_userInput( sdh_finger_ind, dj, sdh_side ) == true ) {
-	    printf("Should send finger message \n");
-	    /*
-	    if( sdh_side == SDH_LEFT ) {
-		ql[sdh_finger_ind] = ql[sdh_finger_ind] + dj;
-		sdh_pos( ql, SDH_LEFT, tsec );	 
-	    } else if( sdh_side == SDH_RIGHT ) {
-	    	qr[sdh_finger_ind] = qr[sdh_finger_ind] + dj;
-		sdh_pos( qr, SDH_RIGHT, tsec );	 
-	    }
-	    */
-	}
-	
+	if( poll(&stdin_poll, 1, 0 ) == 1 ) {
+		printf("Data to search! \n");
+		if( check_userInput( sdh_finger_ind, dj, sdh_side ) == true ) {
+	    		printf("Should send finger message \n");
+		
+	    		if( sdh_side == SDH_LEFT ) {
+				ql[sdh_finger_ind] = ql[sdh_finger_ind] + dj;
+				sdh_pos( ql, SDH_LEFT, tsec );	 
+	    		} else if( sdh_side == SDH_RIGHT ) {
+	    			qr[sdh_finger_ind] = qr[sdh_finger_ind] + dj;
+				sdh_pos( qr, SDH_RIGHT, tsec );	 
+	    		}
+			    
+		}
+	} // end polling
 	aa_mem_region_local_release();
 	usleep(0.5*1e6);	
     }
@@ -138,11 +142,12 @@ int main( int argc, char* argv[] ) {
 bool check_userInput( int &_sdh_finger_ind,  
 		      double &_dj,
 		      int _sdh_side ) {
-    
+   
     char finger_id[4];
     char dir[2];
-
-    int r = scanf( "%s%s", finger_id, dir );
+    char line[40];
+    gets( line );
+    int r = sscanf( line, "%s%s", finger_id, dir );
     if( r == 2 ) {
 	
 	// Check direction (increase/decrease)
@@ -151,7 +156,9 @@ bool check_userInput( int &_sdh_finger_ind,
 	else { printf("\t * [WARNING] Did not set direction +/- \n"); return false; }
 	
 	// Check which finger
-	if( strcmp(finger_id, "lf1") == 0 ) {
+	if( strcmp(finger_id,"lrf") == 0 ) {
+	    _sdh_finger_ind = 0;
+	} else if( strcmp(finger_id, "lf1") == 0 ) {
 	    _sdh_finger_ind = 1;
 	} else if( strcmp(finger_id, "lf2") == 0 ) {
 	    _sdh_finger_ind = 2;
@@ -169,7 +176,7 @@ bool check_userInput( int &_sdh_finger_ind,
 	}
 
 
-	printf("\t -- [INFO] Moving finger %d with dj:$f of hand: %s \n",
+	printf("\t -- [INFO] Moving finger %d with dj:%f of hand: %s \n",
 	       _sdh_finger_ind, _dj,
 	       _sdh_side == SDH_LEFT? "sdh_left" : "sdh_right" );
 	return true;
@@ -276,28 +283,9 @@ static void update( void ) {
 			 &chan_sdhstate_left,
 			 &timeout );
 
-    printf("SDH Left: Pos: (");
-    for( int i = 0; i < SDH_AXES; ++i ) {
-	printf(" %f ", ql[i] );
-    } printf("\n");
-    printf("SDH Right: Vel: (");
-    for( int i = 0; i < SDH_AXES; ++i ) {
-	printf(" %f ", dql[i] );
-    } printf("\n");
-
-
     int u_sr = update_n( SDH_AXES, qr, dqr,
 			 &chan_sdhstate_right,
 			 &timeout );
-
-    printf("SDH Right: Pos: (");
-    for( int i = 0; i < SDH_AXES; ++i ) {
-	printf(" %f ", qr[i] );
-    } printf("\n");
-    printf("SDH Right: Vel: (");
-    for( int i = 0; i < SDH_AXES; ++i ) {
-	printf(" %f ", dqr[i] );
-    } printf("\n");
     
     is_updated = is_updated || u_sl || u_sr;
 			 

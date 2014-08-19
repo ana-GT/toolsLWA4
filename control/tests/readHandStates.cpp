@@ -54,7 +54,7 @@ int main( int argc, char* argv[] ) {
     while( !sns_cx.shutdown ) {
 	update();
 	aa_mem_region_local_release();
-	sleep(0.5*1e6);
+	usleep(0.5*1e6);
     }
 
     sns_end();
