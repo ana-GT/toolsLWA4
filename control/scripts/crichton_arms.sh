@@ -14,7 +14,7 @@
 # 0. Set variables
 #************************
 
-# ARMS + TORSO: SocketCAN interfaces
+# ARMS: SocketCAN interfaces
 CAN_L=can0
 CAN_R=can1
 
@@ -41,7 +41,8 @@ fi
 #*************************
 # 2. CREATE CHANNELS
 #*************************
-CHANNELS="ref-left state-left ref-right state-right"
+CHANNELS="state-left state-right"
+CHANNELS="$CHANNELS ref-left ref-right"
 
 #******************************
 # 3. DEFINE USEFUL FUNCTIONS
