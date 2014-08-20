@@ -156,7 +156,7 @@ static void control_n( size_t n,
     sns_msg_set_time( &msg->header, &now, tnano );
 
     // Send
-    //ach_put( chan, msg, sns_msg_motor_ref_size(msg) );
+    ach_put( chan, msg, sns_msg_motor_ref_size(msg) );
 
 }
 
@@ -182,43 +182,43 @@ bool check_userInput( int &_arm_drive_ind,
 	
 	// Check which finger
 	if( strcmp(drive_id,"l0") == 0 ) {
-	    _arm_drive_ind = 6;
+	    _arm_drive_ind = 0;
 	    _arm_side = ARM_LEFT;
 	} else if( strcmp(drive_id, "l1") == 0 ) {
-	    _arm_drive_ind = 6;
+	    _arm_drive_ind = 1;
 	    _arm_side = ARM_LEFT;
 	} else if( strcmp(drive_id, "l2") == 0 ) {
-	    _arm_drive_ind = 6;
+	    _arm_drive_ind = 2;
 	    _arm_side = ARM_LEFT;
 	} else if( strcmp(drive_id, "l3") == 0 ) {
-	    _arm_drive_ind = 6;
+	    _arm_drive_ind = 3;
 	    _arm_side = ARM_LEFT;
 	} else if( strcmp(drive_id, "l4") == 0 ) {
-	    _arm_drive_ind = 6;
+	    _arm_drive_ind = 4;
 	    _arm_side = ARM_LEFT;
 	} else if( strcmp(drive_id, "l5") == 0 ) {
-	    _arm_drive_ind = 6;
+	    _arm_drive_ind = 5;
 	    _arm_side = ARM_LEFT;
 	} else if( strcmp(drive_id, "l6") == 0 ) {
 	    _arm_drive_ind = 6; 
 	    _arm_side = ARM_LEFT;
 	} else if( strcmp(drive_id,"r0") == 0 ) {
-	    _arm_drive_ind = 6;
+	    _arm_drive_ind = 0;
 	    _arm_side = ARM_RIGHT;
 	} else if( strcmp(drive_id, "r1") == 0 ) {
-	    _arm_drive_ind = 6;
+	    _arm_drive_ind = 1;
 	    _arm_side = ARM_RIGHT;
 	} else if( strcmp(drive_id, "r2") == 0 ) {
-	    _arm_drive_ind = 6;
+	    _arm_drive_ind = 2;
 	    _arm_side = ARM_RIGHT;
 	} else if( strcmp(drive_id, "r3") == 0 ) {
-	    _arm_drive_ind = 6;
+	    _arm_drive_ind = 3;
 	    _arm_side = ARM_RIGHT;
 	} else if( strcmp(drive_id, "r4") == 0 ) {
-	    _arm_drive_ind = 6;
+	    _arm_drive_ind = 4;
 	    _arm_side = ARM_RIGHT;
 	} else if( strcmp(drive_id, "r5") == 0 ) {
-	    _arm_drive_ind = 6;
+	    _arm_drive_ind = 5;
 	    _arm_side = ARM_RIGHT;
 	} else if( strcmp(drive_id, "r6") == 0 ) {
 	    _arm_drive_ind = 6;
@@ -228,7 +228,7 @@ bool check_userInput( int &_arm_drive_ind,
 	    return false;
 	}
 
-	printf("\t -- [INFO] Moving finger %d with dj:%f of hand: %s \n",
+	printf("\t -- [INFO] Moving drive %d with dv:%f of arm: %s \n",
 	       _arm_drive_ind, _dv,
 	       _arm_side == ARM_LEFT? "arm_left" : "arm_right" );
 	return true;
