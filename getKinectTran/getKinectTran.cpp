@@ -112,7 +112,7 @@ static void onMouse( int event, int x, int y, int, void* ) {
   r = ach_get( &ee_pos_chan,
 	       msg,
 	       sizeof(msg),
-	       &frame_size, NULL, 0 );
+	       &frame_size, NULL, ACH_O_LAST );
 
   if( r != ACH_MISSED_FRAME && r != ACH_OK ) {
     printf("\t * [BAD] Did not receive updated EE pos - NO STORING POINT \n");

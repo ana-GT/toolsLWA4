@@ -145,7 +145,7 @@ int main( int argc, char* argv[] ) {
     } // end if poll
     
     aa_mem_region_local_release();
-    usleep(0.5*1e6);	
+    usleep(0.015*1e6);	
 
   } // end while
 
