@@ -48,6 +48,7 @@ static void control_n( size_t n,
 		       ach_channel_t* chan );
 void printHelp( char* argv0 );
 void updateEEPos();
+void test();
 
 
 /**
@@ -59,9 +60,10 @@ int main( int argc, char* argv[] ) {
   // 0. Logistics
   //--------------------
   int c;
-  while((c = getopt(argc, argv, "h" )) != -1 ) {
+  while((c = getopt(argc, argv, "ht" )) != -1 ) {
     switch(c) {
     case 'h': { printHelp(argv[0]); return 1; } break;
+    case 't': {setHardcode(); initKin(); test(); return 1; }
     } // end switch
   } // end while
 
@@ -201,6 +203,30 @@ bool initKin() {
 
   printf("\t * [OK] Good. Alita left arm has been loaded \n");  
   return true;
+
+}
+
+
+/**
+ * @function test
+ */
+void test() {
+  std::cout << "Test Kinematics "<<std::endl;
+  std::vector<int> armDofs(7);
+  for( int i = 0; i < 7; ++i ) { armDofs[i] = i + 6; }
+
+  for( int i = 0; i < waypoints.size(); ++i ) {
+    leftArm->setConfig( armDofs, waypoints[i] );
+
+  Eigen::Isometry3d T6;
+  T6 = leftArm->getBodyNode("L6")->getWorldTransform();
+
+  // Offset of EE marker
+  Eigen::Vector3d EEp;
+  EEp = T6.linear() * EEoffset + T6.translation();
+  
+  std::cout << "Supposed EE point ["<<i<<"] :"<< EEp.transpose() << std::endl;
+  } // end for	
 
 }
 
@@ -355,6 +381,7 @@ static int update_n( size_t n,
 void printHelp( char* argv0 ) {
   printf("Usage: \n");
   printf("\t -h: This help \n");
+  printf("\t -t: Test kinematics \n");
   printf("\t * Once the program started running: \n");
   printf("\t COMMAND [ENTER] : \n" );
   printf("\t \t - COMMAND={0->1, 1->2...4->5}\n");
