@@ -199,7 +199,7 @@ bool initKin() {
   if( leftArm == NULL ) { return false; }
 
   // Set EEoffset
-  EEoffset << 0.055,-0.29,0;
+  EEoffset << -0.055, 0, 0.07;
 
   printf("\t * [OK] Good. Alita left arm has been loaded \n");  
   return true;
@@ -218,12 +218,12 @@ void test() {
   for( int i = 0; i < waypoints.size(); ++i ) {
     leftArm->setConfig( armDofs, waypoints[i] );
 
-  Eigen::Isometry3d T6;
-  T6 = leftArm->getBodyNode("L6")->getWorldTransform();
+  Eigen::Isometry3d T7;
+  T7 = leftArm->getBodyNode("L7")->getWorldTransform();
 
   // Offset of EE marker
   Eigen::Vector3d EEp;
-  EEp = T6.linear() * EEoffset + T6.translation();
+  EEp = T7.linear() * EEoffset + T7.translation();
   
   std::cout << "Supposed EE point ["<<i<<"] :"<< EEp.transpose() << std::endl;
   } // end for	
@@ -247,12 +247,12 @@ void updateEEPos() {
   leftArm->setConfig( armDofs, current );
 
 
-  Eigen::Isometry3d T6;
-  T6 = leftArm->getBodyNode("L6")->getWorldTransform();
+  Eigen::Isometry3d T7;
+  T7 = leftArm->getBodyNode("L7")->getWorldTransform();
 
   // Offset of EE marker
   Eigen::Vector3d EEp;
-  EEp = T6.linear() * EEoffset + T6.translation();
+  EEp = T7.linear() * EEoffset + T7.translation();
 
   // Send through channel
   double msg[3];

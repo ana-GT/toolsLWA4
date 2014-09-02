@@ -29,6 +29,8 @@ ach_channel_t ee_pos_chan;
 static void onMouse( int event, int x, int y, int flags, void* userdata );
 void startComm( int state, void* userdata );
 void process( int state, void* userdata );
+void icpApproach();
+void svdApproach();
 
 /**
  * @function main
@@ -149,12 +151,82 @@ void startComm( int state, void* userdata ) {
  */
 void process( int state, void* userdata ) {
 
-  int numMatches = Pk.size();
-
-  if( numMatches < 4 ) {
-    printf("\t * [ERROR] You need at least 4 points to get the Twk!\n");
+  if( Pk.size() < 12 ) {
+    printf("\t * [ERROR] You need at least 4 points but I DO RECOMMEND YOU TO GET AS MANY AS POSSIBLE (AT LEAST 12)!\n");
     return;
   }
+
+  icpApproach();
+}
+
+
+/**
+ * @function icpApproach
+ * @brief Make sure you use a lot of points (with 7 points I got an error as high as 44 cm. With 12 points, the max. error was 2.5cm
+ */
+void icpApproach() {
+
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in (new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out (new pcl::PointCloud<pcl::PointXYZ>);
+
+  // Fill in the CloudIn data
+  cloud_in->width    = Pk.size();
+  cloud_in->height   = 1;
+  cloud_in->is_dense = false;
+  cloud_in->points.resize (cloud_in->width * cloud_in->height);
+
+  cloud_out->width    = Pk.size();
+  cloud_out->height   = 1;
+  cloud_out->is_dense = false;
+  cloud_out->points.resize (cloud_out->width * cloud_out->height);
+
+
+  for (size_t i = 0; i < cloud_in->points.size (); ++i)
+  {
+    cloud_in->points[i].x = Pk[i](0);
+    cloud_in->points[i].y = Pk[i](1);
+    cloud_in->points[i].z = Pk[i](2);
+
+    cloud_out->points[i].x = Pr[i](0);
+    cloud_out->points[i].y = Pr[i](1);
+    cloud_out->points[i].z = Pr[i](2);
+
+  }
+
+  pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
+  icp.setInputCloud(cloud_in);
+  icp.setInputTarget(cloud_out);
+  pcl::PointCloud<pcl::PointXYZ> Final;
+  icp.align(Final);
+  std::cout << "has converged:" << icp.hasConverged() << " score: " <<
+  icp.getFitnessScore() << std::endl;
+  std::cout << icp.getFinalTransformation() << std::endl;
+
+  Eigen::Matrix4f tf = icp.getFinalTransformation();
+  Eigen::Matrix4d Tf;
+  for( int i = 0; i < 4; i++ ) {
+    for( int j = 0; j < 4; j++ ) {
+      Tf(i,j) = (double) tf(i,j);
+    }
+  }
+
+  for( int i = 0; i < n; ++i ) {
+    Eigen::Vector3d pt;
+    pt = ( (Tf.block(0,0,3,3))*Pk[i] + Tf.block(0,3,3,1) );
+    std::cout << "[DEBUG] Orig point: "<< Pr[i].transpose() <<
+      " , Tf: "<< pt.transpose() <<" error: "<< (Pr[i] - pt).norm() << std::endl;
+
+  }
+
+}
+
+
+/**
+ * @function svdApproach
+ */
+void svdApproach() {
+
+  int numMatches = Pk.size();
 
   // 1. Compute the weighted centroids of both kinect and world sets
   // (all points same weight in our case)
@@ -208,5 +280,5 @@ void process( int state, void* userdata ) {
 
   }
 
-
 }
+
