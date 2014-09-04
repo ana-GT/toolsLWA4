@@ -32,6 +32,9 @@ link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
 
+# Add levmar
+add_subdirectory( levmar )
+
 # Add project
 add_executable( getKinectTran getKinectTran.cpp )
 target_link_libraries( getKinectTran ${OpenCV_LIBRARIES} ${SNS_LIBRARIES} ${ACH_LIBRARIES} ${AMINO_LIBRARIES} ${PCL_LIBRARIES} lapack blas gfortran )
@@ -66,5 +69,3 @@ set_target_properties( testCalib PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOU
 add_executable (testICP testICP.cpp)
 target_link_libraries (testICP ${PCL_LIBRARIES})
 
-add_executable (testICP3 testICP3.cpp)
-target_link_libraries (testICP3 ${PCL_LIBRARIES})
