@@ -12,6 +12,10 @@
 #include <Eigen/Dense>
 #include <Eigen/StdVector>
 
+#include <pcl/io/pcd_io.h>
+#include <pcl/point_types.h>
+#include <pcl/registration/icp.h>
+
 #include <ach.h>
 #include <sns.h>
 
@@ -122,8 +126,9 @@ static void onMouse( int event, int x, int y, int, void* ) {
   }
   
   for( int i = 0; i < 3; ++i ) { pw(i) = msg[i]; }
-
-  printf( "\t * Clicked in (%d, %d) with kinect coords: (%f, %f, %f) and robot coords: (%f, %f, %f)\n", x, y, pk(0), pk(1), pk(2), pw(0), pw(1), pw(2) );
+  printf("\t * Clicked in (%d, %d) \n", x, y );
+  printf( "Pk[%d] << %f, %f, %f; Pr[%d] << %f, %f, %f;\n", Pk.size(), 
+	  pk(0), pk(1), pk(2), Pw.size(), pw(0), pw(1), pw(2) );
 
   // Store it
   Pk.push_back(pk);
@@ -151,7 +156,7 @@ void startComm( int state, void* userdata ) {
  */
 void process( int state, void* userdata ) {
 
-  if( Pk.size() < 12 ) {
+  if( Pk.size() < 4) {
     printf("\t * [ERROR] You need at least 4 points but I DO RECOMMEND YOU TO GET AS MANY AS POSSIBLE (AT LEAST 12)!\n");
     return;
   }
@@ -175,7 +180,7 @@ void icpApproach() {
   cloud_in->is_dense = false;
   cloud_in->points.resize (cloud_in->width * cloud_in->height);
 
-  cloud_out->width    = Pk.size();
+  cloud_out->width    = Pw.size();
   cloud_out->height   = 1;
   cloud_out->is_dense = false;
   cloud_out->points.resize (cloud_out->width * cloud_out->height);
@@ -187,9 +192,9 @@ void icpApproach() {
     cloud_in->points[i].y = Pk[i](1);
     cloud_in->points[i].z = Pk[i](2);
 
-    cloud_out->points[i].x = Pr[i](0);
-    cloud_out->points[i].y = Pr[i](1);
-    cloud_out->points[i].z = Pr[i](2);
+    cloud_out->points[i].x = Pw[i](0);
+    cloud_out->points[i].y = Pw[i](1);
+    cloud_out->points[i].z = Pw[i](2);
 
   }
 
@@ -210,11 +215,11 @@ void icpApproach() {
     }
   }
 
-  for( int i = 0; i < n; ++i ) {
+  for( int i = 0; i < Pk.size(); ++i ) {
     Eigen::Vector3d pt;
     pt = ( (Tf.block(0,0,3,3))*Pk[i] + Tf.block(0,3,3,1) );
-    std::cout << "[DEBUG] Orig point: "<< Pr[i].transpose() <<
-      " , Tf: "<< pt.transpose() <<" error: "<< (Pr[i] - pt).norm() << std::endl;
+    std::cout << "[DEBUG] Pw[i]: "<< Pw[i].transpose() <<
+      " , Tf(Pk[i]): "<< pt.transpose() <<" error: "<< (Pw[i] - pt).norm() << std::endl;
 
   }
 

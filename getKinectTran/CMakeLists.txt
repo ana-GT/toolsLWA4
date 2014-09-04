@@ -24,10 +24,18 @@ include_directories( ${ACH_INCLUDE_DIRS} )
 find_package( sns REQUIRED )
 include_directories( ${SNS_INCLUDE_DIRS} )
 
+# PCL
+find_package(PCL 1.7 REQUIRED)
+
+include_directories(${PCL_INCLUDE_DIRS})
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
+
+
 # Add project
-add_executable( ${PROJECT_NAME} getKinectTran.cpp )
-target_link_libraries( ${PROJECT_NAME} ${OpenCV_LIBRARIES} ${SNS_LIBRARIES} ${ACH_LIBRARIES} ${AMINO_LIBRARIES} lapack blas gfortran )
-set_target_properties( ${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin
+add_executable( getKinectTran getKinectTran.cpp )
+target_link_libraries( getKinectTran ${OpenCV_LIBRARIES} ${SNS_LIBRARIES} ${ACH_LIBRARIES} ${AMINO_LIBRARIES} ${PCL_LIBRARIES} lapack blas gfortran )
+set_target_properties( getKinectTran PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin
   ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin )
 
 add_executable( moveEE_predef moveEE_predef.cpp )
@@ -35,16 +43,28 @@ target_link_libraries( moveEE_predef ${DART_LIBRARIES} ${SNS_LIBRARIES} ${ACH_LI
 set_target_properties( moveEE_predef PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin
   ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin )
 
+
+add_executable( moveEE_automatic moveEE_automatic.cpp )
+target_link_libraries( moveEE_automatic ${DART_LIBRARIES} ${SNS_LIBRARIES} ${ACH_LIBRARIES} ${AMINO_LIBRARIES} lapack blas gfortran )
+set_target_properties( moveEE_automatic PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin
+  ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin )
+
+
+# Apps
+add_executable( pickObject pickObject.cpp )
+target_link_libraries( pickObject ${OpenCV_LIBRARIES} ${SNS_LIBRARIES} ${ACH_LIBRARIES} ${AMINO_LIBRARIES} lapack blas gfortran )
+set_target_properties( pickObject PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin
+  ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin )
+
+
+# Tests
 add_executable( testCalib testCalib.cpp )
 target_link_libraries( testCalib ${DART_LIBRARIES} ${SNS_LIBRARIES} ${ACH_LIBRARIES} ${AMINO_LIBRARIES} lapack blas gfortran )
 set_target_properties( testCalib PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin
   ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin )
 
-find_package(PCL 1.7 REQUIRED)
-
-include_directories(${PCL_INCLUDE_DIRS})
-link_directories(${PCL_LIBRARY_DIRS})
-add_definitions(${PCL_DEFINITIONS})
-
 add_executable (testICP testICP.cpp)
 target_link_libraries (testICP ${PCL_LIBRARIES})
+
+add_executable (testICP3 testICP3.cpp)
+target_link_libraries (testICP3 ${PCL_LIBRARIES})
