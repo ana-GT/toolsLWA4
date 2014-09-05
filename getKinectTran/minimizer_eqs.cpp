@@ -2,9 +2,10 @@
  * @file minimizer_eqs.cpp
  */
 #include <Eigen/Core>
+#include <Eigen/Geometry>
 #include <vector>
 #include <levmar/levmar.h>
-
+#include <iostream>
 
 /**
  * @struct Contains the matching robot-kinect points info
@@ -22,32 +23,42 @@ struct levmar_data {
 void levmar_fx( double *p, double* x, int m, int n, void *data );
 void levmar_jac( double* p, double* jac,
 		 int m, int n, void* data );
-void minimize();
+void minimize(int n,
+	       std::vector<Eigen::Vector3d> Pk,
+	       std::vector<Eigen::Vector3d> Pr);
 
 /**
  * @function main
  */
 int main( int argc, char* argv[] ) {
 
-  int n = 11;
+  int n = 14;
   std::vector<Eigen::Vector3d> Pk(n);
   std::vector<Eigen::Vector3d> Pr(n);
 
-  Pk[0] << 0.071398, 0.259809, 1.142000; Pr[0] << 0.050184, 0.468419, 0.288886;
-  Pk[1] << 0.070981, 0.070981, 1.048000; Pr[1] << 0.045854, 0.310434, 0.446621;
-  Pk[2] << 0.072867, -0.078775, 1.134000; Pr[2] << 0.054560, 0.126212, 0.432608;
-  Pk[3] << 0.063465, -0.097180, 1.142000; Pr[3] << 0.044365, 0.105079, 0.433429;
-  //Pk[4] << 0.347342, -0.132021, 0.905000; Pr[4] << 0.321748, 0.166193, 0.682149;
-  //Pk[5] << 0.455632, 0.074854, 0.937000; Pr[5] << 0.435891, 0.348101, 0.571315;
-  Pk[4] << 0.032495, 0.064990, 0.891000; Pr[4] << -0.015862, 0.348098, 0.594576;
-  Pk[5] << 0.147269, 0.038290, 0.848000; Pr[5] << 0.100851, 0.341364, 0.659953;
-  Pk[6] << 0.069293, 0.151785, 0.950000; Pr[6] << 0.024191, 0.415510, 0.513822;
-  Pk[7] << -0.086033, 0.091300, 1.011000; Pr[7] << -0.130680, 0.334779, 0.468280;
-  Pk[8] << -0.214444, -0.042548, 0.980000; Pr[8] << -0.271782, 0.226661, 0.536273;
-  Pk[9] << -0.222453, 0.121990, 1.033000; Pr[9] << -0.271820, 0.379783, 0.422279;
-  Pk[10] << -0.107034, 0.199203, 0.856000; Pr[10] << -0.161211, 0.509962, 0.548747;
-  
-  minimize( n, Pk, Pr );
+Pk[0] << 0.176150, 0.313715, 0.966000; Pr[0] << 0.050160, 0.468393, 0.288904;
+Pk[1] << 0.170304, 0.110383, 0.908000; Pr[1] << 0.045830, 0.310416, 0.446611;
+Pk[2] << 0.174337, -0.028176, 1.014000; Pr[2] << 0.054553, 0.126199, 0.432561;
+Pk[3] << 0.164567, -0.046508, 1.030000; Pr[3] << 0.044347, 0.105062, 0.433419;
+Pk[4] << 0.121617, 0.081078, 0.753000; Pr[4] << -0.015849, 0.348099, 0.594581;
+Pk[5] << 0.236176, 0.043827, 0.701000; Pr[5] << 0.100861, 0.341373, 0.659949;
+Pk[6] << 0.168325, 0.173799, 0.788000; Pr[6] << 0.024200, 0.415512, 0.513829;
+Pk[7] << -0.128743, -0.007485, 0.862000; Pr[7] << -0.271778, 0.226662, 0.536290;
+
+Pk[8] << -0.020814, 0.214261, 0.705000; Pr[8] << -0.161190, 0.509979, 0.548749;
+Pk[9] << 0.007563, 0.127061, 0.871000; Pr[9] << -0.130705, 0.334754, 0.468285;
+
+
+Pk[10] << -0.126600, -0.040141, 0.889000; Pr[10] << -0.271813, 0.185335, 0.536856;
+Pk[11] << -0.128432, 0.162474, 0.891000; Pr[11] << -0.271816, 0.379778, 0.422282;
+
+Pk[12] << -0.049375, 0.193703, 0.729000; Pr[12] << -0.189596, 0.478652, 0.541590;
+
+
+Pk[13] << -0.127372, -0.150694, 1.033000; Pr[13] << -0.272122, -0.000054, 0.472733;
+
+
+  minimize( 8, Pk, Pr );
 
   return 0;
 }
@@ -62,7 +73,7 @@ void minimize( int n,
 
   double opts[LM_OPTS_SZ];
   double info[LM_INFO_SZ];
-
+  
   opts[0] = LM_INIT_MU;
   opts[1] = 1E-15;
   opts[2] = 1E-15;
@@ -94,30 +105,55 @@ void minimize( int n,
   }
 
   // Initialize values for parameters p
-  p[0] = 0; p[1] = 3.14; p[2] = 0;
-  p[3] = 0.1; p[4] = 0.65; p[z] = 1.4;
+  p[0] = 0.0; p[1] = 0.0; p[2] = 0.0;
+  p[3] = 0.0; p[4] = 0.5; p[5] = 1.0;
 
   // Set limits
+  
   double ub[m]; double lb[m];
-  for( int i = 0; i < 3; ++i ) { lb[i] = -M_PI; ub[i] = M_PI; }
+  lb[0] = -3.14; ub[0] = 3.14;
+  lb[1] = -3.14; ub[1] = 3.14;
+  lb[2] = -3.14; ub[2] = 3.14;
   lb[3] = -2.0; ub[3] = 2.0; // tx
   lb[4] = 0.0; ub[4] = 2.0; // ty
-  lb[5] = 0.8; ub[5] = 2.0; // tz
+  lb[5] = -2.0; ub[5] = 2.0; // tz
   
   int ret;
   ret = dlevmar_bc_der( levmar_fx, levmar_jac, 
 			p, y, m, n, 
 			lb, ub,
-			NULL, 1000, opts, info,
+			NULL, 5000, opts, info, // opts
 			NULL, NULL, (void*)&data );
 
+  std::cout << "Levenberg returned in "<< info[5]<<" iterations. Reason: "<< info[6]<< " sumsq: "<< info[1] << "["<<info[0]<<"]"<< std::endl;
+  std::cout << "Pars: "<< p[0]<< ", "<<p[1] <<", "<< p[2] << std::endl;
+
+  Eigen::Isometry3d Tf;
+  Tf = Eigen::Isometry3d::Identity();
+  Tf.translation() << p[3], p[4], p[5];
+  Eigen::Matrix3d rot;
+  rot = Eigen::AngleAxisd( p[2], Eigen::Vector3d(0,0,1) )*Eigen::AngleAxisd( p[1], Eigen::Vector3d(0,1,0) )*Eigen::AngleAxisd( p[0], Eigen::Vector3d(1,0,0) );
+  Eigen::Vector3d temp; temp = rot.col(0);
+  //rot.col(0) = rot.col(1);
+  //rot.col(1) = temp;
+  Tf.linear() = rot;
+
+  std::cout << "Transformation of Kinect w.r.t. world: \n"<< Tf.matrix() << std::endl;
+
+    for( int i = 0; i < Pk.size(); ++i ) {
+    Eigen::Vector3d pt;
+    pt = ( Tf.linear()*Pk[i] + Tf.translation() );
+    std::cout << "[DEBUG] Pr["<<i<<"]: "<< Pr[i].transpose() <<
+      " , Tf(Pk["<<i<<"]): "<< pt.transpose() <<" error: "<< (Pr[i] - pt).norm() << std::endl;
+
+  }
 }
 
 
 void levmar_fx( double *p, double* x, int m, int n, void *data ) {
 
   double xr, yr, zr, xk, yk, zk;
-  double t2, t3, t4, t5, t6, t7, t9, t10;
+  double t2, t3, t4, t5, t6, t7, t8, t9, t10;
 
   struct levmar_data *dptr;
   dptr = (struct levmar_data*) data;
@@ -154,7 +190,7 @@ void levmar_jac( double* p, double* jac,
   double xr, yr, zr, xk, yk, zk;
   double t12, t13, t14, t15, t16, t17, t18, t19, t20;
   double t21, t22, t23, t24, t25, t26, t27, t28, t29, t30;
-  double t31, t32, t33, t34, t35, t36, t37, t38;
+  double t31, t32, t33, t34, t35, t36, t37, t38, t39, t40;
 
   struct levmar_data* dptr;
   dptr = (struct levmar_data*) data;

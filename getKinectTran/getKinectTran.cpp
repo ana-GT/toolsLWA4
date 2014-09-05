@@ -15,6 +15,7 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 #include <pcl/registration/icp.h>
+#include <fstream>
 
 #include <ach.h>
 #include <sns.h>
@@ -43,6 +44,7 @@ int main( int argc, char* argv[] ) {
 
   // Open device
   cv::VideoCapture capture( cv::CAP_OPENNI );
+//  capture.set( cv::CAP_OPENNI_IMAGE_GENERATOR_OUTPUT_MODE, cv::CAP_OPENNI_SXGA_15HZ );
   //capture.open( cv::CAP_OPENNI );
   
   if( !capture.isOpened() ) {
@@ -126,7 +128,7 @@ static void onMouse( int event, int x, int y, int, void* ) {
   }
   
   for( int i = 0; i < 3; ++i ) { pw(i) = msg[i]; }
-  printf("\t * Clicked in (%d, %d) \n", x, y );
+  printf( "Pixel: %d, %d; \n", x, y );
   printf( "Pk[%d] << %f, %f, %f; Pr[%d] << %f, %f, %f;\n", Pk.size(), 
 	  pk(0), pk(1), pk(2), Pw.size(), pw(0), pw(1), pw(2) );
 
@@ -156,12 +158,26 @@ void startComm( int state, void* userdata ) {
  */
 void process( int state, void* userdata ) {
 
+  std::ofstream file("data.txt");
+
+  if(file.is_open())
+  {
+    for(int i =0; i < Pk.size(); i++)
+    {
+	file << Pk[i](0) << " " << Pk[i](1) << " " << Pk[i](2) << " ";
+	file << Pw[i](0) << " " << Pw[i](1) << " " << Pw[i](2) << " " << std::endl;
+    }
+	file.close();
+  }
+
+
   if( Pk.size() < 4) {
     printf("\t * [ERROR] You need at least 4 points but I DO RECOMMEND YOU TO GET AS MANY AS POSSIBLE (AT LEAST 12)!\n");
     return;
   }
 
   icpApproach();
+  svdApproach();
 }
 
 
@@ -170,6 +186,8 @@ void process( int state, void* userdata ) {
  * @brief Make sure you use a lot of points (with 7 points I got an error as high as 44 cm. With 12 points, the max. error was 2.5cm
  */
 void icpApproach() {
+
+  std::cout << "ICP"<< std::endl;
 
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in (new pcl::PointCloud<pcl::PointXYZ>);
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out (new pcl::PointCloud<pcl::PointXYZ>);
@@ -201,28 +219,31 @@ void icpApproach() {
   pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
   icp.setInputCloud(cloud_in);
   icp.setInputTarget(cloud_out);
+  Eigen::Matrix4f tf = icp.getFinalTransformation();
   pcl::PointCloud<pcl::PointXYZ> Final;
   icp.align(Final);
-  std::cout << "has converged:" << icp.hasConverged() << " score: " <<
-  icp.getFitnessScore() << std::endl;
-  std::cout << icp.getFinalTransformation() << std::endl;
 
-  Eigen::Matrix4f tf = icp.getFinalTransformation();
+  std::cout << "\t * ICP converged? :" << icp.hasConverged() << ". Score: " <<
+    icp.getFitnessScore() << std::endl;
+  std::cout << "\t * Transformation for Kinect in world frame: \n"<< tf << std::endl;
+
+
   Eigen::Matrix4d Tf;
   for( int i = 0; i < 4; i++ ) {
     for( int j = 0; j < 4; j++ ) {
       Tf(i,j) = (double) tf(i,j);
     }
   }
-
+ 
+  std::cout <<"Check: "<<std::endl;
   for( int i = 0; i < Pk.size(); ++i ) {
     Eigen::Vector3d pt;
     pt = ( (Tf.block(0,0,3,3))*Pk[i] + Tf.block(0,3,3,1) );
-    std::cout << "[DEBUG] Pw[i]: "<< Pw[i].transpose() <<
-      " , Tf(Pk[i]): "<< pt.transpose() <<" error: "<< (Pw[i] - pt).norm() << std::endl;
-
+ 
+    std::cout << " Pw["<<i<<"]: "<< Pw[i].transpose() <<
+      " , Tf(Pk[i]): "<< pt.transpose() <<". Error: "<< (Pw[i] - pt).norm() << std::endl;
   }
-
+  
 }
 
 
@@ -230,6 +251,8 @@ void icpApproach() {
  * @function svdApproach
  */
 void svdApproach() {
+
+  std::cout << "SVD Result"<< std::endl;
 
   int numMatches = Pk.size();
 
@@ -242,10 +265,7 @@ void svdApproach() {
     xm += Pk[i];
     ym += Pw[i];
   }
-
-  std::cout << "Bef, xm: "<< xm.transpose() << " ym: "<< ym.transpose() << std::endl;
   xm = xm / numMatches; ym = ym / numMatches;
-  std::cout << "xm: "<< xm.transpose() << " ym: "<< ym.transpose() << std::endl;
 
   // 2. Compute centered vectors
   Eigen::MatrixXd X(3,numMatches);
@@ -275,15 +295,19 @@ void svdApproach() {
   Eigen::Vector3d trans;
   trans = ym - Rot*xm;
 
-  std::cout << "\t * Rotation calculated: \n"<< Rot << std::endl;
-  std::cout << "\t * Translation calculated: \n"<< trans << std::endl;
+  Eigen::Matrix4d Tf;
+  Tf.block(0,0,3,3) = Rot;
+  Tf.block(0,3,3,1) = trans;
 
-  for( int i = 0; i < numMatches; ++i ) {
-    
-    std::cout << "[DEBUG] Orig point: "<< Pw[i].transpose() <<
-      " and with Tf: "<< ( Rot*Pk[i] + trans ).transpose() << std::endl;
-
+  std::cout <<"Check: "<<std::endl;
+  for( int i = 0; i < Pk.size(); ++i ) {
+    Eigen::Vector3d pt;
+    pt = ( (Tf.block(0,0,3,3))*Pk[i] + Tf.block(0,3,3,1) );
+ 
+    std::cout << " Pw["<<i<<"]: "<< Pw[i].transpose() <<
+      " , Tf(Pk[i]): "<< pt.transpose() <<". Error: "<< (Pw[i] - pt).norm() << std::endl;
   }
 
+  
 }
 

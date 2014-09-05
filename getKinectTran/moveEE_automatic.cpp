@@ -168,7 +168,7 @@ int main( int argc, char* argv[] ) {
   }
   // END SECURITY
   //------------------------------------------------------------------------
-
+   printf("I AM STARTING!!!! \n");
   while(stillFollow) {
     // Get the current state
     while( update_n(7, q, dq, &left_arm_state, NULL ) == 0 ) {}

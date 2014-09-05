@@ -69,3 +69,9 @@ set_target_properties( testCalib PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOU
 add_executable (testICP testICP.cpp)
 target_link_libraries (testICP ${PCL_LIBRARIES})
 
+include_directories( ${CMAKE_SOURCE_DIR} )
+add_executable( minimizer_eqs minimizer_eqs.cpp )
+target_link_libraries( minimizer_eqs levmar lapack blas gfortran )
+set_target_properties( minimizer_eqs PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin
+  ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin )
+
