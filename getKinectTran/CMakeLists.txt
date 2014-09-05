@@ -36,28 +36,28 @@ add_definitions(${PCL_DEFINITIONS})
 add_subdirectory( levmar )
 
 # Add project
-add_executable( getKinectTran getKinectTran.cpp )
-target_link_libraries( getKinectTran ${OpenCV_LIBRARIES} ${SNS_LIBRARIES} ${ACH_LIBRARIES} ${AMINO_LIBRARIES} ${PCL_LIBRARIES} lapack blas gfortran )
-set_target_properties( getKinectTran PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin
-  ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin )
+#add_executable( getKinectTran getKinectTran.cpp )
+#target_link_libraries( getKinectTran ${OpenCV_LIBRARIES} ${SNS_LIBRARIES} ${ACH_LIBRARIES} ${AMINO_LIBRARIES} ${PCL_LIBRARIES} lapack blas gfortran )
+#set_target_properties( getKinectTran PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin
+#  ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin )
 
 add_executable( moveEE_predef moveEE_predef.cpp )
-target_link_libraries( moveEE_predef ${DART_LIBRARIES} ${SNS_LIBRARIES} ${ACH_LIBRARIES} ${AMINO_LIBRARIES} lapack blas gfortran )
+target_link_libraries( moveEE_predef ${DART_LIBRARIES} ${SNS_LIBRARIES} ${ACH_LIBRARIES} ${AMINO_LIBRARIES} lapack blas gfortran rt )
 set_target_properties( moveEE_predef PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin
   ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin )
 
 
 add_executable( moveEE_automatic moveEE_automatic.cpp )
-target_link_libraries( moveEE_automatic ${DART_LIBRARIES} ${SNS_LIBRARIES} ${ACH_LIBRARIES} ${AMINO_LIBRARIES} lapack blas gfortran )
+target_link_libraries( moveEE_automatic ${DART_LIBRARIES} ${SNS_LIBRARIES} ${ACH_LIBRARIES} ${AMINO_LIBRARIES} rt lapack blas gfortran )
 set_target_properties( moveEE_automatic PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin
   ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin )
 
 
 # Apps
-add_executable( pickObject pickObject.cpp )
-target_link_libraries( pickObject ${OpenCV_LIBRARIES} ${SNS_LIBRARIES} ${ACH_LIBRARIES} ${AMINO_LIBRARIES} lapack blas gfortran )
-set_target_properties( pickObject PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin
-  ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin )
+#add_executable( pickObject pickObject.cpp )
+#target_link_libraries( pickObject ${OpenCV_LIBRARIES} ${SNS_LIBRARIES} ${ACH_LIBRARIES} ${AMINO_LIBRARIES} lapack blas gfortran )
+#set_target_properties( pickObject PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin
+#  ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin )
 
 
 # Tests
@@ -70,8 +70,14 @@ add_executable (testICP testICP.cpp)
 target_link_libraries (testICP ${PCL_LIBRARIES})
 
 include_directories( ${CMAKE_SOURCE_DIR} )
+
 add_executable( minimizer_eqs minimizer_eqs.cpp )
 target_link_libraries( minimizer_eqs levmar lapack blas gfortran )
 set_target_properties( minimizer_eqs PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin
   ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin )
 
+
+add_executable( testRANSAC testRANSAC.cpp )
+target_link_libraries( testRANSAC levmar lapack blas gfortran )
+set_target_properties( testRANSAC PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin
+  ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin )
