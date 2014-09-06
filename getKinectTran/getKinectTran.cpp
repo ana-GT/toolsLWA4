@@ -299,6 +299,8 @@ void svdApproach() {
   Tf.block(0,0,3,3) = Rot;
   Tf.block(0,3,3,1) = trans;
 
+  std::cout << "SVD Resulting Transformation: \n"<< Tf << std::endl;
+
   std::cout <<"Check: "<<std::endl;
   for( int i = 0; i < Pk.size(); ++i ) {
     Eigen::Vector3d pt;

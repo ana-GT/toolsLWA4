@@ -15,6 +15,9 @@
 #include <dart/dynamics/BodyNode.h>
 #include <dart/dynamics/Skeleton.h>
 #include <dart/utils/urdf/DartLoader.h>
+#include <iostream>
+#include <fstream>
+#include <string>
 
 // Variables
 enum DIR {
@@ -36,6 +39,8 @@ double dt = 1.0 / freq;
 double dq_thresh = 0.1;
 int direction = NONE;
 double clickTime = 5;
+std::string path_filename;
+bool readPath = false;
 
 struct timespec now;
 std::string path_leftarm("/home/cerdogan/Research/commonData/scenes/alita/alita_leftarm_calib.urdf");
@@ -44,11 +49,13 @@ dart::simulation::World* world = NULL;
 dart::dynamics::Skeleton* leftArm = NULL;
 
 int goTime = 3;
+int startHere = 30;
 
 /****************/
 /** FUNCTIONS   */
 /****************/
 void setHardcode();
+bool readHardcode( std::string filename );
 bool initKin();
 void go( int from, int to );
 int update( void );
@@ -74,7 +81,7 @@ int main( int argc, char* argv[] ) {
   // 0. Logistics
   //--------------------
   int c;
-  while((c = getopt(argc, argv, "htm:d:" )) != -1 ) {
+  while((c = getopt(argc, argv, "htm:d:r:" )) != -1 ) {
     switch(c) {
     case 'h': { printHelp(argv[0]); return 1; } break;
     case 't': { direction = FORWARD; setHardcode(); initKin(); test(); return 1; }
@@ -89,8 +96,13 @@ int main( int argc, char* argv[] ) {
       }
     } break;
     case 'd':{
-      clickTime = atoi(optarg);
-    }
+      clickTime = atof(optarg);
+      printf("Click time: %f \n", clickTime );
+    } break;
+    case 'r': {
+      path_filename = std::string(optarg);
+      readPath = true;
+    } break;      
     } // end switch
   } // end while
 
@@ -103,7 +115,17 @@ int main( int argc, char* argv[] ) {
   //--------------------
   // 1. Parse
   //--------------------
-  setHardcode();
+  if( readPath ) { 
+    if( readHardcode( path_filename ) == false ) {
+      return 1;
+    } else {
+      std::cout << "\t * Waypoints loaded: "<< waypoints.size() << std::endl;
+    }   
+  }
+  else { 
+    setHardcode(); 
+  }
+
   if( !initKin() ) {
     printf("\t * [CRAP] Kinematics not initialized well \n");
     return -1;
@@ -159,6 +181,8 @@ int main( int argc, char* argv[] ) {
   //---------------------------------------------------------------------
   while( update() == 0 ) {}
 
+  std::cout << "\t * Checking everything is in order "<<std::endl;
+
   for(int i =0; i < 7; ++i ) { current(i) = q[i]; }
   if( (current - waypoints[0]).norm() > 0.08 ) {
     printf(" The first trajectory point is too far from the current state. ARE YOU SURE? \n");
@@ -168,7 +192,7 @@ int main( int argc, char* argv[] ) {
   }
   // END SECURITY
   //------------------------------------------------------------------------
-   printf("I AM STARTING!!!! \n");
+  std::cout << "\t * Start"<<std::endl;
   while(stillFollow) {
     // Get the current state
     while( update_n(7, q, dq, &left_arm_state, NULL ) == 0 ) {}
@@ -189,15 +213,17 @@ int main( int argc, char* argv[] ) {
       
       //------------------------------
       // CLICK MOMENT
-      printf("\t * Reached point to point %d, you got 5 seconds to click! \n", key_idx -1 );
-      int maxCounter = (int)( (double)clickTime / 0.01 );
-      int counter = 0;
-      while( counter < maxCounter ) {
-	update();
-	updateEEPos();
-	usleep(0.01*1e6);
-	counter++;
-      }
+      if( key_idx > startHere ) {
+  	    printf("\t * Reached point to point %d, you got f seconds to click! \n", key_idx -1, clickTime );
+      	    int maxCounter = (int)( (double)clickTime / 0.01 );
+      	    int counter = 0;
+      	    while( counter < maxCounter ) {
+	    	update();
+		updateEEPos();
+		usleep(0.01*1e6);
+		counter++;
+      	   }
+     }   
       //------------------------------
 
       currentGoal = waypoints[key_idx];
@@ -217,6 +243,45 @@ int main( int argc, char* argv[] ) {
   sns_end();
   return 0;
 
+}
+
+/**
+ * @function readHardcode
+ */
+bool readHardcode( std::string filename ) {
+
+  std::string line;
+  std::ifstream file( filename.c_str() );
+  Eigen::VectorXd p(7);
+  std::vector<Eigen::VectorXd> temp;
+
+  if( file.is_open() ) {
+  
+    while( getline(file, line) ) {
+      std::istringstream iss(line);
+      iss >> p(0) >> p(1) >> p(2) >> p(3) >> p(4) >> p(5) >> p(6);
+      temp.push_back(p);
+    }
+
+    // Get ready
+    waypoints.resize(0);
+    
+    // If forward
+    if( direction == FORWARD ) {
+      waypoints = temp;
+    } 
+    // If backwards
+    else if( direction == BACKWARDS ) {
+      for(int i = temp.size()-1; i >= 0; --i ) {
+	waypoints.push_back(temp[i] );
+      }
+    }
+    
+    return true;
+    
+  } else {
+    return false;
+  }
 
 }
 
@@ -503,5 +568,6 @@ void printHelp( char* argv0 ) {
   printf("\t -t: Test kinematics \n");
   printf("\t -d: Wait time in seconds \n");
   printf("\t -m: Mode (FORWARD OR BACKWARDS): \n");
+  printf("\t -r: File with path to follow \n");
 
 }
