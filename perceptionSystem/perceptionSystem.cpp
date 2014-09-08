@@ -30,8 +30,8 @@ double f;
 
 std::vector<pcl::PointCloud<pcl::PointXYZRGBA> > clusters;
 std::vector<cv::Vec3b> colors;
-std::vector< std::vector<int> > pixelClustersX;
-std::vector< std::vector<int> > pixelClustersY;
+std::vector< std::vector<Eigen::Vector2d> > pixelClusters;
+std::vector<Eigen::Vector2d> clusterCentroids;
 
 /***********************/
 /** FUNCTIONS          */
@@ -130,7 +130,21 @@ static void onMouse( int event, int x, int y, int, void* ) {
   currentPoint << (double)p.x*-1, (double)p.y, (double)p.z;
 
   std::cout << "\t * [INFO] Current point ready to send: "<< currentPoint.transpose() << std::endl;
-  
+
+  // Check what segmented object is selected
+  if( clusterCentroids.size() > 0 ) {
+    Eigen::Vector2d p; p << (double)x, (double) y;
+    double dist;
+    double minDist = 1000; int minInd = -1;
+    for( int i = 0; i < clusterCentroids.size(); ++i ) {
+      dist = ( p - clusterCentroids[i] ).norm();
+      if( dist < minDist ) {
+	minDist = dist; minInd = i; 
+      }
+    }
+    
+    std::cout << "Segmented cloud to send: "<< minInd << std::endl;
+  } // end if
 }
 
 /**
@@ -188,8 +202,6 @@ void process( int state,
 
   tts.processCloud( cloud );
   int n = tts.getNumClusters();
-  printf("\t * Num clusters: %d \n", n );
-  pcl::io::savePCDFileASCII<pcl::PointXYZRGBA>("testPoint.pcd", *cloud);
 
   // Set segmented variables
   isSegmentedFlag = true;
@@ -228,9 +240,9 @@ void sendMsg( int state, void* userdata ) {
  * @function drawSegmented
  */
 void drawSegmented() {
-  for( int i = 0; i < pixelClustersX.size(); ++i ) {
-    for( int j = 0; j < pixelClustersX[i].size(); ++j ) {
-      rgbImg.at<cv::Vec3b>( pixelClustersY[i][j], pixelClustersX[i][j] ) = colors[i];
+  for( int i = 0; i < pixelClusters.size(); ++i ) {
+    for( int j = 0; j < pixelClusters[i].size(); ++j ) {
+      rgbImg.at<cv::Vec3b>( pixelClusters[i][j](1), pixelClusters[i][j](0) ) = colors[i];
     }
   }
   
@@ -241,34 +253,47 @@ void drawSegmented() {
  */
 void getPixelClusters() {
 
-  pixelClustersX.resize( clusters.size() );
-  pixelClustersY.resize( clusters.size() );
-  for( int i = 0; i < pixelClustersX.size(); ++i ) {
-    pixelClustersX[i].resize(0);
-    pixelClustersY[i].resize(0);
+  pixelClusters.resize( clusters.size() );
+  clusterCentroids.resize( clusters.size() );
+  
+  for( int i = 0; i < pixelClusters.size(); ++i ) {
+    pixelClusters[i].resize(0);
   }
-
+  
   int u, v;
   int width, height;
   double X, Y, Z; 
+  int sum_u; int sum_v;
 
   // Get (u,v) pixel of clusters  
   width = rgbImg.cols;
   height = rgbImg.rows;
 
   for( int i = 0; i < clusters.size(); ++i ) {
+   
+    sum_u = 0;
+    sum_v = 0;
+
     for( int j = 0; j < clusters[i].points.size(); ++j ) {
 
       X = clusters[i].points[j].x;
       Y = clusters[i].points[j].y;
       Z = clusters[i].points[j].z;
-
+      
       u = width/2 - (int)(X*f/Z);
       v = height/2 -(int)(Y*f/Z);
+      
+      pixelClusters[i].push_back( Eigen::Vector2d(u,v) );
 
-      pixelClustersX[i].push_back(u);
-      pixelClustersY[i].push_back(v);
+
+      sum_u += u;
+      sum_v += v;
     }
+    
+    Eigen::Vector2d ct;
+    ct << (double)(sum_u)/clusters[i].points.size(), (double)(sum_v)/clusters[i].points.size();
+    clusterCentroids[i] = ct;
+
   }
 
   
