@@ -30,7 +30,8 @@ double f;
 
 std::vector<pcl::PointCloud<pcl::PointXYZRGBA> > clusters;
 std::vector<cv::Vec3b> colors;
-
+std::vector< std::vector<int> > pixelClustersX;
+std::vector< std::vector<int> > pixelClustersY;
 
 /***********************/
 /** FUNCTIONS          */
@@ -41,6 +42,7 @@ void process( int state, void* userdata );
 void sendMsg( int state, void* userdata );
 
 void drawSegmented();
+void getPixelClusters();
 
 /**
  * @function main
@@ -201,7 +203,7 @@ void process( int state,
     def(0) = rand() % 255; def(1) = rand() % 255; def(2) = rand() % 255;  
     colors[i] = def;
   }
-
+  getPixelClusters();
   
 }
 
@@ -226,32 +228,48 @@ void sendMsg( int state, void* userdata ) {
  * @function drawSegmented
  */
 void drawSegmented() {
+  for( int i = 0; i < pixelClustersX.size(); ++i ) {
+    for( int j = 0; j < pixelClustersX[i].size(); ++j ) {
+      rgbImg.at<cv::Vec3b>( pixelClustersY[i][j], pixelClustersX[i][j] ) = colors[i];
+    }
+  }
+  
+}
+
+/**
+ * @function getPixelClusters
+ */
+void getPixelClusters() {
+
+  pixelClustersX.resize( clusters.size() );
+  pixelClustersY.resize( clusters.size() );
+  for( int i = 0; i < pixelClustersX.size(); ++i ) {
+    pixelClustersX[i].resize(0);
+    pixelClustersY[i].resize(0);
+  }
 
   int u, v;
   int width, height;
-
-  // Get (u,v) pixel of clusters
   double X, Y, Z; 
-  int cx, cy;
 
-  cx = rgbImg.cols / 2;
-  cy = rgbImg.rows / 2;
-
+  // Get (u,v) pixel of clusters  
   width = rgbImg.cols;
   height = rgbImg.rows;
 
   for( int i = 0; i < clusters.size(); ++i ) {
     for( int j = 0; j < clusters[i].points.size(); ++j ) {
 
-      X = clusters[i].points[j].x*-1;
+      X = clusters[i].points[j].x;
       Y = clusters[i].points[j].y;
       Z = clusters[i].points[j].z;
 
-      u = (X*f/Z + cx);
-      v = height - (Y*f/Z + cy);
-      
-      rgbImg.at<cv::Vec3b>(v,u) = colors[i];
+      u = width/2 - (int)(X*f/Z);
+      v = height/2 -(int)(Y*f/Z);
+
+      pixelClustersX[i].push_back(u);
+      pixelClustersY[i].push_back(v);
     }
   }
+
   
 }
