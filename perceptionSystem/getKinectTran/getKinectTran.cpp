@@ -107,9 +107,19 @@ static void onMouse( int event, int x, int y, int, void* ) {
   // Get (X,Y,Z) from Kinect
   cv::Point3f p;
   Eigen::Vector3d pk;
-
+  
   p = pclMap.at<cv::Point3f>(y,x);
   pk(0) = (double)p.x; pk(1) = (double)p.y; pk(2) = (double)p.z;
+
+	// DEBUG
+	printf("Clicked in (%d,%d), Kinect coordinates: %f %f %f \n", x, y, pk(0), pk(1), pk(2));
+
+	// CHECK WORST ERROR CASE
+	p = pclMap.at<cv::Point3f>(x,y);
+  pk(0) = (double)p.x; pk(1) = (double)p.y; pk(2) = (double)p.z;
+
+	// DEBUG 2
+	printf("[Second interpretation] Clicked in (%d,%d), Kinect coordinates: %f %f %f \n", x, y, pk(0), pk(1), pk(2));
 
   // Get (X,Y,Z) from robot kinematics
   Eigen::Vector3d pw;
