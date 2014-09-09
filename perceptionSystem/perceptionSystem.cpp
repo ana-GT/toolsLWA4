@@ -265,6 +265,14 @@ void sendMsg( int state, void* userdata ) {
     printf("\t * [GOOD] Message sent all right! \n");
   }
 
+ /////////// DEBUG/////////////////
+ for( int i = 0; i < clusters.size(); ++i ) {
+  char debugName[50];
+  sprintf( debugName,"debug_segmented%d.pcd", i );
+  pcl::io::savePCDFileASCII (debugName, clusters[i]);
+  }
+ //////////////DEBUG//////////////
+
   aa_mem_region_local_release();
 
 }
