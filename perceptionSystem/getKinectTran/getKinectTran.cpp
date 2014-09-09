@@ -107,19 +107,9 @@ static void onMouse( int event, int x, int y, int, void* ) {
   // Get (X,Y,Z) from Kinect
   cv::Point3f p;
   Eigen::Vector3d pk;
-  
+
   p = pclMap.at<cv::Point3f>(y,x);
   pk(0) = (double)p.x; pk(1) = (double)p.y; pk(2) = (double)p.z;
-
-	// DEBUG
-	printf("Clicked in (%d,%d), Kinect coordinates: %f %f %f \n", x, y, pk(0), pk(1), pk(2));
-
-	// CHECK WORST ERROR CASE
-	p = pclMap.at<cv::Point3f>(x,y);
-  pk(0) = (double)p.x; pk(1) = (double)p.y; pk(2) = (double)p.z;
-
-	// DEBUG 2
-	printf("[Second interpretation] Clicked in (%d,%d), Kinect coordinates: %f %f %f \n", x, y, pk(0), pk(1), pk(2));
 
   // Get (X,Y,Z) from robot kinematics
   Eigen::Vector3d pw;
@@ -165,6 +155,7 @@ void startComm( int state, void* userdata ) {
 
 /**
  * @function process
+ * @brief Store data
  */
 void process( int state, void* userdata ) {
 
@@ -181,145 +172,7 @@ void process( int state, void* userdata ) {
   }
 
 
-  if( Pk.size() < 4) {
-    printf("\t * [ERROR] You need at least 4 points but I DO RECOMMEND YOU TO GET AS MANY AS POSSIBLE (AT LEAST 12)!\n");
-    return;
-  }
 
-  icpApproach();
-  svdApproach();
 }
 
-
-/**
- * @function icpApproach
- * @brief Make sure you use a lot of points (with 7 points I got an error as high as 44 cm. With 12 points, the max. error was 2.5cm
- */
-void icpApproach() {
-
-  std::cout << "ICP"<< std::endl;
-
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in (new pcl::PointCloud<pcl::PointXYZ>);
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out (new pcl::PointCloud<pcl::PointXYZ>);
-
-  // Fill in the CloudIn data
-  cloud_in->width    = Pk.size();
-  cloud_in->height   = 1;
-  cloud_in->is_dense = false;
-  cloud_in->points.resize (cloud_in->width * cloud_in->height);
-
-  cloud_out->width    = Pw.size();
-  cloud_out->height   = 1;
-  cloud_out->is_dense = false;
-  cloud_out->points.resize (cloud_out->width * cloud_out->height);
-
-
-  for (size_t i = 0; i < cloud_in->points.size (); ++i)
-  {
-    cloud_in->points[i].x = Pk[i](0);
-    cloud_in->points[i].y = Pk[i](1);
-    cloud_in->points[i].z = Pk[i](2);
-
-    cloud_out->points[i].x = Pw[i](0);
-    cloud_out->points[i].y = Pw[i](1);
-    cloud_out->points[i].z = Pw[i](2);
-
-  }
-
-  pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
-  icp.setInputCloud(cloud_in);
-  icp.setInputTarget(cloud_out);
-  Eigen::Matrix4f tf = icp.getFinalTransformation();
-  pcl::PointCloud<pcl::PointXYZ> Final;
-  icp.align(Final);
-
-  std::cout << "\t * ICP converged? :" << icp.hasConverged() << ". Score: " <<
-    icp.getFitnessScore() << std::endl;
-  std::cout << "\t * Transformation for Kinect in world frame: \n"<< tf << std::endl;
-
-
-  Eigen::Matrix4d Tf;
-  for( int i = 0; i < 4; i++ ) {
-    for( int j = 0; j < 4; j++ ) {
-      Tf(i,j) = (double) tf(i,j);
-    }
-  }
- 
-  std::cout <<"Check: "<<std::endl;
-  for( int i = 0; i < Pk.size(); ++i ) {
-    Eigen::Vector3d pt;
-    pt = ( (Tf.block(0,0,3,3))*Pk[i] + Tf.block(0,3,3,1) );
- 
-    std::cout << " Pw["<<i<<"]: "<< Pw[i].transpose() <<
-      " , Tf(Pk[i]): "<< pt.transpose() <<". Error: "<< (Pw[i] - pt).norm() << std::endl;
-  }
-  
-}
-
-
-/**
- * @function svdApproach
- */
-void svdApproach() {
-
-  std::cout << "SVD Result"<< std::endl;
-
-  int numMatches = Pk.size();
-
-  // 1. Compute the weighted centroids of both kinect and world sets
-  // (all points same weight in our case)
-  Eigen::Vector3d xm; xm << 0, 0, 0; // Points from Kinect
-  Eigen::Vector3d ym; ym << 0, 0, 0; // Points from kinematics
-
-  for( int i = 0; i < numMatches; ++i ) {    
-    xm += Pk[i];
-    ym += Pw[i];
-  }
-  xm = xm / numMatches; ym = ym / numMatches;
-
-  // 2. Compute centered vectors
-  Eigen::MatrixXd X(3,numMatches);
-  Eigen::MatrixXd Y(3,numMatches);	
-
-  for( int i = 0; i < numMatches; ++i ) {
-    X.col(i) = Pk[i] - xm;
-    Y.col(i) = Pw[i] - ym;
-  }
-
-  // 3. Compute the 3x3 covariance matrix
-  Eigen::Matrix3d S;
-  S = X*(Y.transpose()); // X*W*Yt -> W is identity
-
-
-  // 4. Compute the singular value decomposition
-  Eigen::JacobiSVD<Eigen::MatrixXd> svd( S, Eigen::ComputeThinU | Eigen::ComputeThinV );
-  Eigen::Matrix3d U; Eigen::Matrix3d V;
-  U = svd.matrixU(); V = svd.matrixV();
-  
-  Eigen::Matrix3d temp; temp = V*(U.transpose()); 
-  Eigen::Matrix3d M; M.setIdentity(); M(2,2) = temp.determinant();
-  std::cout << "This should be 1: "<< M(2,2) << std::endl;
-  Eigen::Matrix3d Rot;
-  Rot = V*M*(U.transpose());
-
-  Eigen::Vector3d trans;
-  trans = ym - Rot*xm;
-
-  Eigen::Matrix4d Tf;
-  Tf.block(0,0,3,3) = Rot;
-  Tf.block(0,3,3,1) = trans;
-
-  std::cout << "SVD Resulting Transformation: \n"<< Tf << std::endl;
-
-  std::cout <<"Check: "<<std::endl;
-  for( int i = 0; i < Pk.size(); ++i ) {
-    Eigen::Vector3d pt;
-    pt = ( (Tf.block(0,0,3,3))*Pk[i] + Tf.block(0,3,3,1) );
- 
-    std::cout << " Pw["<<i<<"]: "<< Pw[i].transpose() <<
-      " , Tf(Pk[i]): "<< pt.transpose() <<". Error: "<< (Pw[i] - pt).norm() << std::endl;
-  }
-
-  
-}
 

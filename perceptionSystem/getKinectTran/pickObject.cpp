@@ -94,7 +94,7 @@ static void onMouse( int event, int x, int y, int, void* ) {
   // Get (X,Y,Z) from Kinect
   cv::Point3f p;
   p = pclMap.at<cv::Point3f>(y,x);
-  currentPoint << (double)p.x*-1, (double)p.y, (double)p.z;
+  currentPoint << (double)p.x, (double)p.y, (double)p.z;
 
   std::cout << "\t * [INFO] Current point ready to send: "<< currentPoint.transpose() << std::endl;
   
