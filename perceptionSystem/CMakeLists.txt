@@ -36,16 +36,24 @@ add_definitions(${PCL_DEFINITIONS})
 add_subdirectory( tabletop_segmentation )
 #add_subdirectory( getKinectTran )
 
-if( QHULL_FOUND )
-message( STATUS "QHULL WAS FOUND!!!" )
-else()
-message( STATUS "QHULL WAS NOT FOUND!!!")  
-endif()
+
+# Message library
+add_library( perception_msgs perception_msgs.cpp )
+target_link_libraries( perception_msgs  ${SNS_LIBRARIES} ${ACH_LIBRARIES} ${AMINO_LIBRARIES} lapack blas gfortran )
+set_target_properties( perception_msgs PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib
+  ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib )
+
 
 # Apps
 add_executable( perceptionSystem perceptionSystem.cpp )
-target_link_libraries( perceptionSystem tabletop_segmentation ${OpenCV_LIBRARIES} ${PCL_LIBRARIES} ${SNS_LIBRARIES} ${ACH_LIBRARIES} ${AMINO_LIBRARIES} lapack blas gfortran )
+target_link_libraries( perceptionSystem perception_msgs tabletop_segmentation ${OpenCV_LIBRARIES} ${PCL_LIBRARIES} ${SNS_LIBRARIES} ${ACH_LIBRARIES} ${AMINO_LIBRARIES} lapack blas gfortran )
 set_target_properties( perceptionSystem PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin
+  ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin )
+
+# Apps
+add_executable( segmentedCloudTestReceiver segmentedCloudTestReceiver.cpp )
+target_link_libraries( segmentedCloudTestReceiver perception_msgs  ${OpenCV_LIBRARIES} ${PCL_LIBRARIES} ${SNS_LIBRARIES} ${ACH_LIBRARIES} ${AMINO_LIBRARIES} lapack blas gfortran )
+set_target_properties( segmentedCloudTestReceiver PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin
   ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin )
 
 

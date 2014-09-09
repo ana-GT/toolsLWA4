@@ -17,17 +17,22 @@
 #include <Eigen/Core>
 #include <stdint.h>
 #include "tabletop_segmentation/tabletop_segmentation.h"
+#include "perception_msgs.h"
 
 
+/**************************/
+/** GLOBAL VARIABLES      */
+/**************************/
 std::string windowName = std::string("Robot View");
 cv::Mat rgbImg;
 cv::Mat pclMap;
 
-ach_channel_t obj_pos_chan;
+ach_channel_t segmented_cloud_chan;
 Eigen::Vector3d currentPoint;
 bool isSegmentedFlag = false;
 double f;
 
+int selectedSegmentedCloud = -1;
 std::vector<pcl::PointCloud<pcl::PointXYZRGBA> > clusters;
 std::vector<cv::Vec3b> colors;
 std::vector< std::vector<Eigen::Vector2d> > pixelClusters;
@@ -129,7 +134,7 @@ static void onMouse( int event, int x, int y, int, void* ) {
   p = pclMap.at<cv::Point3f>(y,x);
   currentPoint << (double)p.x*-1, (double)p.y, (double)p.z;
 
-  std::cout << "\t * [INFO] Current point ready to send: "<< currentPoint.transpose() << std::endl;
+  std::cout << "\t * [INFO] Current point: "<< currentPoint.transpose() << std::endl;
 
   // Check what segmented object is selected
   if( clusterCentroids.size() > 0 ) {
@@ -143,7 +148,9 @@ static void onMouse( int event, int x, int y, int, void* ) {
       }
     }
     
-    std::cout << "Segmented cloud to send: "<< minInd << std::endl;
+    selectedSegmentedCloud = minInd;
+
+    std::cout << "\t [INFO] Segmented cloud to send: "<< selectedSegmentedCloud << std::endl;
   } // end if
 }
 
@@ -156,7 +163,7 @@ void startComm( int state, void* userdata ) {
   sns_init();
   sns_start();
 
-  sns_chan_open( &obj_pos_chan, "obj-pos", NULL );  
+  sns_chan_open( &segmented_cloud_chan, "segmented-cloud", NULL );  
   printf("\t * [OK] Communication stablished and ready to go \n");
 
 }
@@ -225,14 +232,40 @@ void process( int state,
 void sendMsg( int state, void* userdata ) {
 
   // Send through channel
-  double msg[3];
-  for( int i =0; i < 3; ++i ) { msg[i] = currentPoint(i); }
+  uint32_t n_points = 0;
+  for( int i = 0; i < clusters.size(); ++i ) { n_points += clusters[i].size(); }
+  printf("Number of points: %d \n", n_points );
+  struct sns_msg_segmented_cloud* msg = sns_msg_segmented_cloud_heap_alloc( n_points );
+  
+  sns_msg_segmented_cloud_init( msg, n_points );
+  msg->n_clusters = clusters.size();
+  msg->selected = selectedSegmentedCloud;
+
+
+  int count = 0;
+  
+  for( int i = 0; i < clusters.size(); ++i ) {
+    for( int j = 0; j < clusters[i].size(); ++j ) {
+      msg->u[count].x = clusters[i].points[j].x;
+      msg->u[count].y = clusters[i].points[j].y;
+      msg->u[count].z = clusters[i].points[j].z;
+      msg->u[count].cluster = i;
+      count++;
+    }
+  }
+  
 
   ach_status r;
-  r = ach_put( &obj_pos_chan, msg, sizeof(msg) );
+  printf("\t * Size of msg: %d \n", sns_msg_segmented_cloud_size(msg) );
+  r = ach_put( &segmented_cloud_chan, msg,sns_msg_segmented_cloud_size(msg) );
   if( r != ACH_OK ) {
-    printf("\t * [BAD] Something bad happened while sending obj Pos \n");
+    printf("\t * [BAD] Error sending message. Probably OVERFLOW? Increase frame size? \n");
+
+  } else {
+    printf("\t * [GOOD] Message sent all right! \n");
   }
+
+  aa_mem_region_local_release();
 
 }
 
