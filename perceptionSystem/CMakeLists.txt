@@ -34,7 +34,7 @@ add_definitions(${PCL_DEFINITIONS})
 
 # Add levmar
 add_subdirectory( tabletop_segmentation )
-#add_subdirectory( getKinectTran )
+add_subdirectory( getKinectTran )
 
 
 # Message library
