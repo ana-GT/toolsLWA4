@@ -34,7 +34,7 @@ ach_channel_t left_arm_ref;
 ach_channel_t left_arm_state;
 double q[7]; double dq[7];
 Eigen::Vector3d EEoffset;
-double freq = 100;
+double freq = 10;
 double dt = 1.0 / freq;
 double dq_thresh = 0.1;
 int direction = NONE;
@@ -49,7 +49,7 @@ dart::simulation::World* world = NULL;
 dart::dynamics::Skeleton* leftArm = NULL;
 
 int goTime = 3;
-int startHere = 30;
+int startHere = 35;
 
 /****************/
 /** FUNCTIONS   */
