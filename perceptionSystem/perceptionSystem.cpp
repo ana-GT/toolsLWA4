@@ -204,6 +204,9 @@ void process( int state,
     }
   }
 
+  // Store for AAAI
+   pcl::io::savePCDFileASCII ("aaai_pcd.pcd", *cloud);
+
   // Segment
   TabletopSegmentor<pcl::PointXYZRGBA> tts;
 

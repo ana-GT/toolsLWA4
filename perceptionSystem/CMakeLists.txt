@@ -45,10 +45,10 @@ set_target_properties( perception_msgs PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMA
 
 
 # Apps
-#add_executable( perceptionSystem perceptionSystem.cpp )
-#target_link_libraries( perceptionSystem perception_msgs tabletop_segmentation ${OpenCV_LIBRARIES} ${PCL_LIBRARIES} ${SNS_LIBRARIES} ${ACH_LIBRARIES} ${AMINO_LIBRARIES} lapack blas gfortran )
-#set_target_properties( perceptionSystem PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin
-#  ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin )
+add_executable( perceptionSystem perceptionSystem.cpp )
+target_link_libraries( perceptionSystem perception_msgs tabletop_segmentation ${OpenCV_LIBRARIES} ${PCL_LIBRARIES} ${SNS_LIBRARIES} ${ACH_LIBRARIES} ${AMINO_LIBRARIES} lapack blas gfortran )
+set_target_properties( perceptionSystem PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin
+  ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin )
 
 # Apps
 add_executable( segmentedCloudTestReceiver segmentedCloudTestReceiver.cpp )
